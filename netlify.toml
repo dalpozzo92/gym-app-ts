@@ -38,6 +38,6 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://fit-gilli-dalpozzo-3a79c772.koyeb.app/gym-backend/api/:splat"
+  to = "https://fit-gilli-dalpozzo-3a79c772.koyeb.app/api/:splat"
   status = 200
   force = true

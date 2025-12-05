@@ -31,7 +31,7 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 // Register plugins
 fastify.register(cors, {
-    origin: [CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174'],
+    origin: [CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174', 'https://gym-app-ts.netlify.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
 });
