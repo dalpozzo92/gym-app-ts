@@ -1,0 +1,134 @@
+/* Exercise Detail Input Styles - Mobile Optimized */
+
+.exercise-input-container {
+  background: rgba(var(--ion-text-color-rgb), 0.04);
+  border-radius: 16px;
+  padding: 12px;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exercise-input-label-top {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-left: 2px;
+}
+
+.exercise-input-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.exercise-input-controls input {
+  flex: 1;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--ion-text-color);
+  outline: none;
+  padding: 0;
+  min-width: 0;
+}
+
+.exercise-input-controls input::-webkit-outer-spin-button,
+.exercise-input-controls input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.exercise-input-controls input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.exercise-btn-simple {
+  --padding-start: 0;
+  --padding-end: 0;
+  margin: 0;
+  height: 32px;
+  width: 32px;
+  --border-radius: 8px;
+}
+
+.exercise-btn-simple ion-icon {
+  font-size: 20px;
+}
+/* 
+.exercise-select-container {
+  background: rgba(var(--ion-text-color-rgb), 0.04);
+  border-radius: 16px;
+  min-height: 52px;
+}
+
+.exercise-select-container ion-item {
+  --background: transparent;
+  --border-radius: 16px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --inner-padding-end: 8px;
+  --min-height: 52px;
+}
+
+.exercise-select-container ion-select {
+  font-size: 1rem;
+  font-weight: 600;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+.exercise-select-container ion-label {
+  font-size: 0.65rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px !important;
+}
+
+.exercise-select-container ion-select {
+  margin-top: 16px;
+} */
+
+/* Skeleton Loading Animation */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.skeleton-box {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Slide Animations for Exercise Change */
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

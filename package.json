@@ -1,0 +1,20 @@
+{
+  "name": "crew-new-ts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace mobile",
+    "dev:mobile": "npm run dev --workspace mobile",
+    "dev:backend": "npm run dev --workspace backend",
+    "build": "npm run build --workspace mobile",
+    "build:mobile": "npm run build --workspace mobile",
+    "build:backend": "npm run build --workspace backend",
+    "start:backend": "npm run start --workspace backend",
+    "lint": "npm run lint --workspace mobile",
+    "preview": "npm run preview --workspace mobile"
+  }
+}
