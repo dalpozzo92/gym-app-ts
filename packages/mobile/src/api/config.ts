@@ -1,7 +1,8 @@
 // @ts-nocheck
 import axios, { type AxiosInstance } from 'axios';
 
-export const API_BASE_URL: string = import.meta.env.VITE_API_URL;
+export const API_BASE_URL: string = import.meta.env.VITE_API_URL || "fit-gilli-dalpozzo-3a79c772.koyeb.app/gym-backend"
+  ;
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -9,6 +10,22 @@ export const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true // Importante per inviare/ricevere i cookie
+});
+
+// ✅ Interceptor per aggiungere Bearer Token (Dual Auth per PWA iOS)
+apiClient.interceptors.request.use(async (config) => {
+  try {
+    // Importiamo dinamicamente per evitare cicli
+    const { getAuthTokens } = await import('@/db/dexie');
+    const tokens = await getAuthTokens();
+
+    if (tokens?.accessToken) {
+      config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+    }
+  } catch (err) {
+    // Ignora errori di lettura token
+  }
+  return config;
 });
 
 // ✅ Interceptor per gestire refresh token automatico (MASSIMO 1 TENTATIVO)

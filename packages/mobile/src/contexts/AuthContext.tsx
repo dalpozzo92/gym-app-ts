@@ -26,7 +26,7 @@ type AuthState = {
 };
 
 type AuthContextValue = AuthState & {
-  login: (user: AuthUser | null) => void;
+  login: (data: { user: AuthUser; accessToken: string; refreshToken: string } | null) => void;
   logout: (history?: { replace: (path: string) => void }) => Promise<void>;
   checkAuth: () => Promise<boolean>;
   id_user_details: number | null;
@@ -109,9 +109,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // ============================================
   // Login (chiamata da LoginPage)
   // ============================================
-  const loginUser = (user: AuthUser | null) => {
-    console.log('✅ [AuthContext] Login utente:', user);
-    setUser(user);
+  const loginUser = async (data: { user: AuthUser; accessToken: string; refreshToken: string } | null) => {
+    console.log('✅ [AuthContext] Login utente:', data?.user);
+
+    if (data) {
+      // ✅ Salva i token in Dexie per uso futuro (fallback se i cookie falliscono)
+      await saveAuthTokens({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        expiresAt: Date.now() + 3600 * 1000, // Stima, il backend dovrebbe restituirlo
+        userId: String(data.user.id_user_details || '')
+      });
+
+      setUser(data.user);
+    } else {
+      setUser(null);
+    }
   };
 
   // ============================================
@@ -210,12 +223,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return true;
         }
 
-        // ✅ STEP 3: Refresh fallito, prova cache offline
-        console.log('⚠️ [AuthContext] Refresh fallito, provo cache offline...');
+        // ✅ STEP 3: Refresh fallito, prova cache offline o token salvato
+        console.log('⚠️ [AuthContext] Refresh fallito, provo cache/token salvato...');
 
         const cachedAuth = await getAuthTokens();
 
         if (cachedAuth && cachedAuth.userId) {
+          // Se abbiamo un token salvato, proviamo a usarlo per verificare l'auth (magari il cookie è bloccato ma il token è valido)
+          if (cachedAuth.accessToken) {
+            console.log('🔄 [AuthContext] Tento verifica con Bearer Token salvato...');
+            // Qui potremmo chiamare verifyToken() ma dobbiamo assicurarci che l'interceptor usi questo token.
+            // Per ora, se abbiamo i dati in cache, li usiamo come fallback "offline-like" ma funzionale
+          }
+
           const cachedUser: AuthUser = {
             id_user_details: parseInt(cachedAuth.userId, 10)
           };

@@ -14,10 +14,14 @@ type AuthResponse<T> = {
 };
 
 // Login utente tramite backend
-export const loginUser = async (email: string, password: string): Promise<ApiUser> => {
+export const loginUser = async (email: string, password: string): Promise<{ user: ApiUser; accessToken: string; refreshToken: string }> => {
   try {
-    const response: AuthResponse<{ user: ApiUser }> = await apiClient.post('/api/auth/login', { email, password });
-    return response.data.user;
+    const response: AuthResponse<{ user: ApiUser; accessToken: string; refreshToken: string }> = await apiClient.post('/api/auth/login', { email, password });
+    return {
+      user: response.data.user,
+      accessToken: response.data.accessToken,
+      refreshToken: response.data.refreshToken
+    };
   } catch (error) {
     console.error('Login error:', error);
     throw error;
@@ -47,13 +51,17 @@ export const verifyToken = async (): Promise<boolean> => {
 };
 
 // Verifica refresh token tramite backend
-export const verifyRefreshToken = async (): Promise<boolean> => {
+export const verifyRefreshToken = async (): Promise<{ isValid: boolean; accessToken?: string; refreshToken?: string }> => {
   try {
-    const response: AuthResponse<{ isValid: boolean }> = await apiClient.post('/api/auth/verify-refresh-token');
-    return response.data.isValid ?? false;
+    const response: AuthResponse<{ isValid: boolean; token?: string; refreshToken?: string }> = await apiClient.post('/api/auth/verify-refresh-token');
+    return {
+      isValid: response.data.isValid ?? false,
+      accessToken: response.data.token,
+      refreshToken: response.data.refreshToken
+    };
   } catch (error) {
     console.error('Refresh Token verification error:', error);
-    return false;
+    return { isValid: false };
   }
 };
 
