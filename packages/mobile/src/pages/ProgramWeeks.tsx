@@ -602,7 +602,7 @@ const ProgramWeeks: React.FC = () => {
     setIsCompleteWeekModalOpen(false);
 
     try {
-      const result = await completeWeek(selectedWeekData.id_program_week);
+      const result = await completeWeek(selectedWeekData.id_program_week as number);
       console.log('✅ Settimana completata:', result);
 
       // Ricarica i dati del programma

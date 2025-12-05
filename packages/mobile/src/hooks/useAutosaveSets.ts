@@ -20,7 +20,7 @@ type SetState = {
 
 type Update = {
   setId: string;
-  field: 'reps' | 'load' | 'actual_reps' | 'actual_load' | 'rpe' | 'execution_rating' | 'notes' | 'completed' | 'completed_at';
+  field: 'actual_reps' | 'actual_load' | 'rpe' | 'execution_rating' | 'notes' | 'completed' | 'completed_at';
   value: number | string | boolean | null;
 };
 

@@ -882,7 +882,7 @@ const SetsManager = ({
       }
       pendingSetsRef.current[target.setId][field] = value;
 
-      updateSet({ setId: target.setId, field, value });
+      updateSet({ setId: target.setId, field: field as any, value });
 
       // ✅ Calcola progress usando i valori più recenti dal ref
       const totalSets = sets.length;
