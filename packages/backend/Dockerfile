@@ -1,23 +1,21 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy root package.json and lockfile if they exist (for monorepo structure)
-# If you don't have a root package.json, just copy the backend one.
-# Assuming standard structure where we might need to build dependencies.
-
-# For this specific setup, we can just copy the backend package since it seems self-contained enough
-# or we can copy everything. Let's try to keep it simple and focused on backend.
-
+# Copia il package.json del backend
 COPY packages/backend/package.json ./
-# COPY package-lock.json ./ 
 
+# Installa le dipendenze
 RUN npm install
 
+# Copia tutto il codice sorgente del backend
 COPY packages/backend/ ./
 
+# Compila il progetto TypeScript
 RUN npm run build
 
+# Espone la porta (assicurati che corrisponda a quella del server Fastify)
 EXPOSE 8000
 
+# Avvia il server
 CMD ["npm", "start"]
