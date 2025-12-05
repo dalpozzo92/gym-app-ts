@@ -1,7 +1,10 @@
-# netlify.toml
+# netlify.toml (Root Configuration)
+
 [build]
-  publish = "dist"
-  command = "npm run build"
+  base = "."
+  publish = "packages/mobile/dist"
+  command = "npm run build:mobile"
+  ignore = "git diff --quiet HEAD^ HEAD packages/mobile/"
 
 # Reindirizza tutte le richieste a index.html per supportare la navigazione SPA
 [[redirects]]
@@ -18,7 +21,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     
-    # Cache per asset statici (modifica secondo le tue esigenze)
+    # Cache per asset statici
     cache-control = '''
     max-age=31536000,
     public,
@@ -35,6 +38,6 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://YOUR_KOYEB_APP_URL.koyeb.app/api/:splat"
+  to = "https://fit-gilli-dalpozzo-3a79c772.koyeb.app/gym-backend/api/:splat"
   status = 200
   force = true
