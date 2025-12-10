@@ -132,6 +132,7 @@ Giorni della settimana.
 * notes
 * theoretical_duration_seconds INTEGER
   → durata teorica stimata del giorno (riscaldamento + esercizi + passaggi)
+* id_workout_session (FK → workout_session.id_workout_session)
 
 ---
 
@@ -144,6 +145,8 @@ Istanza dell’esercizio nel giorno / settimana.
 * id_program_day (FK → program_days.id_program_day)
 * id_exercise_list (FK → exercises_list.id_exercise_list)
 * order_number
+* sets
+* is_deleted
 * notes
 
 > Tutta la logica di serie (reps, rest, carico) è a livello di `workout_exercise_set`.
@@ -178,7 +181,6 @@ Gruppi intensità per serie speciali (drop, rest-pause, superset, cluster, ecc.)
 * reps_min
 * reps_max
 * rest_time           -- in secondi
-* target_load         -- carico consigliato
 * intensity_type      -- stringa o chiave (es. 'normal', 'top_set', 'backoff')
 * group_intensity_id (FK → workout_exercise_group_intensity.id_workout_exercise_group_intensity)
 * notes               -- note di programmazione per quella serie
@@ -189,14 +191,12 @@ Gruppi intensità per serie speciali (drop, rest-pause, superset, cluster, ecc.)
 * actual_reps
 * rpe
 * execution_rating
-* technique_rating
-* completed BOOLEAN
+* completed BOOLEAN (true se actual_load e actual_reps > 0)
 * completed_at TIMESTAMPTZ
 * notes_tracking
 
 **Sessione:**
 
-* id_workout_session (FK → workout_session.id_workout_session)
 
 > In base a `id_reps_type` il frontend/backoffice interpreta `reps_min / reps_max`
 > come range, fisso, tempo, max reps, ecc.
@@ -211,7 +211,6 @@ Sessione reale di allenamento.
 * created_at
 * id_user_details (FK)
 * id_program_week (FK)
-* id_program_day (FK)
 * started_at
 * finished_at
 * duration_seconds
@@ -267,7 +266,7 @@ con possibilità di indicare a quale esercizio si riferisce il messaggio.
 
 * **Sessioni**
 
-  * `workout_session` ↔ `workout_exercise_set`
+  * `workout_session` ↔ `program_days`
 
 * **Chat per programma**
 

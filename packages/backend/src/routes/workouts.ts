@@ -32,30 +32,26 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
           workout_day_exercises.id_workout_day_exercise,
           workout_day_exercises.order_number,
           workout_day_exercises.sets,
-          workout_day_exercises.reps_min,
-          workout_day_exercises.reps_max,
-          workout_day_exercises.rest_time,
-          workout_day_exercises.target_load,
+          workout_day_exercises.notes,
           exercises_list.id_exercise_list,
           exercises_list.name as exercise_name,
           exercises_list.description as exercise_description,
           exercises_list.link_video,
           exercises_list.id_muscolar_group,
-          reps_types.name as reps_type_name,
           program_weeks.week_number,
           COALESCE(
-            (SELECT ROUND(
-              COUNT(CASE WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1 END)::decimal / 
-              GREATEST(COUNT(workout_exercise_set.id_workout_exercise_set), 1), 2
-            )
-            FROM workout_exercise_set 
-            WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise), 
+            LEAST(100, GREATEST(0, (SELECT ROUND(
+              (COUNT(CASE WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1 END) * 100.0) /
+              NULLIF(workout_day_exercises.sets, 0), 0
+            )::integer
+            FROM workout_exercise_set
+            WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise))),
             0
           ) as progress,
           (SELECT CONCAT(workout_exercise_set.actual_load, 'kg x ', workout_exercise_set.actual_reps, ' rip')
-           FROM workout_exercise_set 
+           FROM workout_exercise_set
            WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise
-             AND workout_exercise_set.actual_load > 0 
+             AND workout_exercise_set.actual_load > 0
            ORDER BY workout_exercise_set.created_at DESC
            LIMIT 1
           ) as last_performance,
@@ -67,7 +63,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                'reps_min', workout_exercise_set.reps_min,
                'reps_max', workout_exercise_set.reps_max,
                'rest_time', workout_exercise_set.rest_time,
-               'target_load', workout_exercise_set.target_load,
                'id_reps_type', workout_exercise_set.id_reps_type,
                'intensity_type', workout_exercise_set.intensity_type,
                'group_intensity_id', workout_exercise_set.group_intensity_id,
@@ -76,18 +71,19 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                'intensity', workout_exercise_set.intensity,
                'rpe', workout_exercise_set.rpe,
                'execution_rating', workout_exercise_set.execution_rating,
+               'notes', workout_exercise_set.notes,
                'created_at', workout_exercise_set.created_at
              ) ORDER BY workout_exercise_set.set_number
            )
-           FROM workout_exercise_set 
+           FROM workout_exercise_set
            WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise
           ) as workout_exercise_sets
         FROM workout_day_exercises
         INNER JOIN exercises_list ON workout_day_exercises.id_exercise_list = exercises_list.id_exercise_list
         INNER JOIN program_days ON workout_day_exercises.id_program_day = program_days.id_program_day
         INNER JOIN program_weeks ON program_days.id_program_week = program_weeks.id_program_week
-        LEFT JOIN reps_types ON workout_day_exercises.id_reps_type = reps_types.id_reps_type
         WHERE workout_day_exercises.id_program_day = ${id_program_day}
+          AND workout_day_exercises.is_deleted = 0
         ORDER BY workout_day_exercises.order_number ASC
       `;
 
@@ -121,43 +117,38 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
       }
 
       const week_exercises = await sql`
-        SELECT 
+        SELECT
           program_days.id_program_day,
           program_days.day_number,
           program_days.name as day_name,
           workout_day_exercises.id_workout_day_exercise,
           workout_day_exercises.order_number,
           workout_day_exercises.sets,
-          workout_day_exercises.reps_min,
-          workout_day_exercises.reps_max,
-          workout_day_exercises.rest_time,
-          workout_day_exercises.target_load,
+          workout_day_exercises.notes,
           exercises_list.id_exercise_list,
           exercises_list.name as exercise_name,
           exercises_list.description as exercise_description,
           exercises_list.link_video,
           exercises_list.id_muscolar_group,
-          reps_types.name as reps_type_name,
           COALESCE(
-            (SELECT ROUND(
-              COUNT(CASE WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1 END)::decimal / 
-              GREATEST(COUNT(workout_exercise_set.id_workout_exercise_set), 1), 2
-            )
-            FROM workout_exercise_set 
-            WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise), 
+            LEAST(100, GREATEST(0, (SELECT ROUND(
+              (COUNT(CASE WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1 END) * 100.0) /
+              NULLIF(workout_day_exercises.sets, 0), 0
+            )::integer
+            FROM workout_exercise_set
+            WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise))),
             0
           ) as progress,
           (SELECT CONCAT(workout_exercise_set.actual_load, 'kg x ', workout_exercise_set.actual_reps, ' rip')
-           FROM workout_exercise_set 
+           FROM workout_exercise_set
            WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise
-             AND workout_exercise_set.actual_load > 0 
+             AND workout_exercise_set.actual_load > 0
            ORDER BY workout_exercise_set.created_at DESC
            LIMIT 1
           ) as last_performance
         FROM program_days
         INNER JOIN workout_day_exercises ON program_days.id_program_day = workout_day_exercises.id_program_day
         INNER JOIN exercises_list ON workout_day_exercises.id_exercise_list = exercises_list.id_exercise_list
-        LEFT JOIN reps_types ON workout_day_exercises.id_reps_type = reps_types.id_reps_type
         WHERE program_days.id_program_week = ${id_program_week}
           AND workout_day_exercises.is_deleted = 0
         ORDER BY program_days.day_number ASC, workout_day_exercises.order_number ASC
@@ -209,20 +200,17 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
       }
 
       const workout_day_exercise = await sql`
-        SELECT 
+        SELECT
           workout_day_exercises.id_workout_day_exercise,
           workout_day_exercises.order_number,
           workout_day_exercises.sets,
-          workout_day_exercises.reps_min,
-          workout_day_exercises.reps_max,
-          workout_day_exercises.rest_time,
-          workout_day_exercises.target_load,
+          workout_day_exercises.notes,
           exercises_list.id_exercise_list,
           exercises_list.name as exercise_name,
           exercises_list.description as exercise_description,
           exercises_list.link_video,
           exercises_list.id_muscolar_group,
-          CASE 
+          CASE
             WHEN exercises_list.id_muscolar_group = 1 THEN 'Petto'
             WHEN exercises_list.id_muscolar_group = 2 THEN 'Schiena'
             WHEN exercises_list.id_muscolar_group = 3 THEN 'Spalle'
@@ -232,13 +220,11 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
             ELSE 'Altro'
           END as muscle_group_name,
           program_days.name as day_name,
-          program_weeks.week_number,
-          reps_types.name as reps_type_name
+          program_weeks.week_number
         FROM workout_day_exercises
         INNER JOIN exercises_list ON workout_day_exercises.id_exercise_list = exercises_list.id_exercise_list
         INNER JOIN program_days ON workout_day_exercises.id_program_day = program_days.id_program_day
         INNER JOIN program_weeks ON program_days.id_program_week = program_weeks.id_program_week
-        LEFT JOIN reps_types ON workout_day_exercises.id_reps_type = reps_types.id_reps_type
         WHERE workout_day_exercises.id_workout_day_exercise = ${workoutDayExerciseId}
           AND workout_day_exercises.is_deleted = 0
       `;
@@ -256,7 +242,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
           workout_exercise_set.reps_min,
           workout_exercise_set.reps_max,
           workout_exercise_set.rest_time,
-          workout_exercise_set.target_load,
           workout_exercise_set.id_reps_type,
           workout_exercise_set.intensity_type,
           workout_exercise_set.group_intensity_id,
@@ -298,7 +283,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
       reps_min?: number;
       reps_max?: number;
       rest_time?: number;
-      target_load?: number;
       id_reps_type?: number;
       intensity_type?: string;
       group_intensity_id?: number;
@@ -321,7 +305,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
         reps_min,
         reps_max,
         rest_time,
-        target_load,
         id_reps_type,
         intensity_type,
         group_intensity_id,
@@ -366,8 +349,8 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
 
       if (existingSet.length > 0) {
         // ✅ UPDATE parziale: aggiorna SOLO i campi forniti nel payload
-          // load = ${load !== undefined ? load : existing.load},
-            // reps = ${reps !== undefined ? reps : existing.reps},
+        // load = ${load !== undefined ? load : existing.load},
+        // reps = ${reps !== undefined ? reps : existing.reps},
         const existing = existingSet[0];
         workout_exercise_set = await sql`
           UPDATE workout_exercise_set
@@ -377,7 +360,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
             reps_min = ${reps_min !== undefined ? reps_min : existing.reps_min},
             reps_max = ${reps_max !== undefined ? reps_max : existing.reps_max},
             rest_time = ${rest_time !== undefined ? rest_time : existing.rest_time},
-            target_load = ${target_load !== undefined ? target_load : existing.target_load},
             id_reps_type = ${id_reps_type !== undefined ? id_reps_type : existing.id_reps_type},
             intensity_type = ${intensity_type !== undefined ? intensity_type : existing.intensity_type},
             group_intensity_id = ${group_intensity_id !== undefined ? group_intensity_id : existing.group_intensity_id},
@@ -396,8 +378,8 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
       } else {
         // ✅ INSERT: usa valori di default per campi non forniti
 
-            // ${load !== undefined ? load : 0},
-            // ${reps !== undefined ? reps : 0},
+        // ${load !== undefined ? load : 0},
+        // ${reps !== undefined ? reps : 0},
         workout_exercise_set = await sql`
           INSERT INTO workout_exercise_set (
             id_workout_day_exercises,
@@ -407,7 +389,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
             reps_min,
             reps_max,
             rest_time,
-            target_load,
             id_reps_type,
             intensity_type,
             group_intensity_id,
@@ -428,7 +409,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
             ${reps_min !== undefined ? reps_min : null},
             ${reps_max !== undefined ? reps_max : null},
             ${rest_time !== undefined ? rest_time : null},
-            ${target_load !== undefined ? target_load : null},
             ${id_reps_type !== undefined ? id_reps_type : null},
             ${intensity_type !== undefined ? intensity_type : null},
             ${group_intensity_id !== undefined ? group_intensity_id : null},
@@ -516,7 +496,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                   reps_min = ${set.reps_min !== undefined ? set.reps_min : existing.reps_min},
                   reps_max = ${set.reps_max !== undefined ? set.reps_max : existing.reps_max},
                   rest_time = ${set.rest_time !== undefined ? set.rest_time : existing.rest_time},
-                  target_load = ${set.target_load !== undefined ? set.target_load : existing.target_load},
                   id_reps_type = ${set.id_reps_type !== undefined ? set.id_reps_type : existing.id_reps_type},
                   intensity_type = ${set.intensity_type !== undefined ? set.intensity_type : existing.intensity_type},
                   group_intensity_id = ${set.group_intensity_id !== undefined ? set.group_intensity_id : existing.group_intensity_id},
@@ -532,8 +511,25 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                   AND set_number = ${set.set_number}
                 RETURNING *
               `;
+
+            synced_sets.push(saved_set[0]);
           } else {
-            // ✅ INSERT: usa valori di default per campi non forniti
+            // ✅ INSERT: Crea record solo se almeno un campo è stato inviato
+            // Permette set parziali (es. load=80, reps=0 per nuova settimana)
+            const hasAnyData =
+              set.actual_load !== undefined ||
+              set.actual_reps !== undefined ||
+              set.rpe !== undefined ||
+              set.execution_rating !== undefined ||
+              (set.notes !== undefined && set.notes !== null && set.notes.trim() !== '');
+
+            if (!hasAnyData) {
+              // Skip: nessun campo inviato
+              debug('[syncWorkoutExerciseSets] Skip set senza dati:', { exerciseId, set_number: set.set_number });
+              continue;
+            }
+
+            // ✅ INSERT: Accetta anche valori 0 (set work in progress)
             saved_set = await sql`
                 INSERT INTO workout_exercise_set (
                   id_workout_day_exercises,
@@ -543,7 +539,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                   reps_min,
                   reps_max,
                   rest_time,
-                  target_load,
                   id_reps_type,
                   intensity_type,
                   group_intensity_id,
@@ -559,18 +554,17 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                 VALUES (
                   ${exerciseId},
                   ${set.set_number},
-                  ${set.actual_load !== undefined ? set.actual_load : 0},
-                  ${set.actual_reps !== undefined ? set.actual_reps : 0},
+                  ${set.actual_load !== undefined ? set.actual_load : null},
+                  ${set.actual_reps !== undefined ? set.actual_reps : null},
                   ${set.reps_min !== undefined ? set.reps_min : null},
                   ${set.reps_max !== undefined ? set.reps_max : null},
                   ${set.rest_time !== undefined ? set.rest_time : null},
-                  ${set.target_load !== undefined ? set.target_load : null},
                   ${set.id_reps_type !== undefined ? set.id_reps_type : null},
                   ${set.intensity_type !== undefined ? set.intensity_type : null},
                   ${set.group_intensity_id !== undefined ? set.group_intensity_id : null},
                   ${set.completed !== undefined ? set.completed : false},
                   ${set.completed_at !== undefined ? set.completed_at : null},
-                  ${set.intensity !== undefined ? set.intensity : 0},
+                  ${set.intensity !== undefined ? set.intensity : null},
                   ${set.rpe !== undefined ? set.rpe : null},
                   ${set.execution_rating !== undefined ? set.execution_rating : null},
                   ${set.notes !== undefined ? set.notes : null},
@@ -579,9 +573,9 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                 )
                 RETURNING *
               `;
-          }
 
-          synced_sets.push(saved_set[0]);
+            synced_sets.push(saved_set[0]);
+          }
 
         } catch (error: any) {
           errors.push({ set, error: error.message });
@@ -644,7 +638,7 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
       `;
 
       const completed_sets = parseInt(completed[0].completed);
-      const progress = total_sets > 0 ? Math.round((completed_sets / total_sets) * 100) : 0;
+      const progress = total_sets > 0 ? Math.min(100, Math.max(0, Math.round((completed_sets / total_sets) * 100))) : 0;
 
       debug('[getWorkoutDayExerciseProgress] Progresso calcolato:', progress);
       return reply.send({ progress, completed: completed_sets, total: total_sets });
@@ -816,13 +810,14 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
         const exercises = await sql`
           SELECT
             workout_day_exercises.id_workout_day_exercise,
+            workout_day_exercises.sets as prescribed_sets,
             COALESCE(
-              (SELECT ROUND(
-                COUNT(CASE WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1 END)::decimal /
-                GREATEST(COUNT(workout_exercise_set.id_workout_exercise_set), 1), 2
-              )
+              LEAST(100, GREATEST(0, (SELECT ROUND(
+                (COUNT(CASE WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1 END) * 100.0) /
+                NULLIF(workout_day_exercises.sets, 0), 0
+              )::integer
               FROM workout_exercise_set
-              WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise),
+              WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise))),
               0
             ) as progress
           FROM workout_day_exercises
@@ -830,14 +825,14 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
             AND workout_day_exercises.is_deleted = 0
         `;
 
-        // ✅ Calcola progress medio del giorno
+        // ✅ Calcola progress medio del giorno (percentuali 0-100)
         const day_progress = exercises.length > 0
-          ? exercises.reduce((sum: number, ex: any) => sum + parseFloat(ex.progress), 0) / exercises.length
+          ? Math.min(100, Math.max(0, Math.round(exercises.reduce((sum: number, ex: any) => sum + parseFloat(ex.progress), 0) / exercises.length)))
           : 0;
 
         days_progress.push({
           id_program_day: day.id_program_day,
-          progress: Math.round(day_progress * 100) / 100, // Arrotonda a 2 decimali
+          progress: day_progress,
           exercises: exercises.map((ex: any) => ({
             id_workout_day_exercise: ex.id_workout_day_exercise,
             progress: parseFloat(ex.progress)
@@ -850,9 +845,9 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
         }
       }
 
-      // ✅ Calcola progress settimana (media progress giorni)
+      // ✅ Calcola progress settimana (media progress giorni, percentuale 0-100)
       const week_progress = days_count > 0
-        ? Math.round((total_day_progress / days_count) * 100) / 100
+        ? Math.min(100, Math.max(0, Math.round(total_day_progress / days_count)))
         : 0;
 
       debug('[getWeekProgress] Progress calcolato - Week:', week_progress, 'Days:', days_progress.length);
@@ -1014,7 +1009,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                 reps_min,
                 reps_max,
                 rest_time,
-                target_load,
                 actual_load,
                 intensity_type,
                 group_intensity_id,
@@ -1036,7 +1030,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                   reps_min,
                   reps_max,
                   rest_time,
-                  target_load,
                   intensity_type,
                   group_intensity_id,
                   notes,
@@ -1057,7 +1050,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                   ${set.reps_min},
                   ${set.reps_max},
                   ${set.rest_time},
-                  ${set.target_load},
                   ${set.intensity_type},
                   ${set.group_intensity_id},
                   ${set.notes},
@@ -1150,19 +1142,19 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
           SELECT
             COUNT(DISTINCT program_days.id_program_day) as total_days,
             COALESCE(
-              ROUND(
+              LEAST(100, GREATEST(0, ROUND(
                 AVG(
                   COALESCE(
                     (SELECT ROUND(
                       COUNT(CASE WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1 END)::decimal /
-                      GREATEST(COUNT(workout_exercise_set.id_workout_exercise_set), 1), 2
+                      NULLIF(workout_day_exercises.sets, 0), 2
                     )
                     FROM workout_exercise_set
                     WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise),
                     0
                   )
                 ), 2
-              ), 0
+              ))), 0
             ) as week_progress
           FROM program_days
           LEFT JOIN workout_day_exercises ON program_days.id_program_day = workout_day_exercises.id_program_day
@@ -1180,7 +1172,7 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
             SELECT
               program_days.id_program_day,
               COALESCE(
-                ROUND(
+                LEAST(100, GREATEST(0, ROUND(
                   AVG(
                     COALESCE(
                       (SELECT ROUND(
@@ -1192,7 +1184,7 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                       0
                     )
                   ), 2
-                ), 0
+                ))), 0
               ) as day_progress
             FROM program_days
             LEFT JOIN workout_day_exercises ON program_days.id_program_day = workout_day_exercises.id_program_day
@@ -1212,19 +1204,19 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
             program_days.name as day_name,
             program_days.day_number,
             COALESCE(
-              ROUND(
+              LEAST(100, GREATEST(0, ROUND(
                 AVG(
                   COALESCE(
                     (SELECT ROUND(
                       COUNT(CASE WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1 END)::decimal /
-                      GREATEST(COUNT(workout_exercise_set.id_workout_exercise_set), 1), 2
+                      NULLIF(workout_day_exercises.sets, 0), 2
                     )
                     FROM workout_exercise_set
                     WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise),
                     0
                   )
                 ), 2
-              ), 0
+              ))), 0
             ) as day_progress
           FROM program_days
           LEFT JOIN workout_day_exercises ON program_days.id_program_day = workout_day_exercises.id_program_day
@@ -1262,19 +1254,19 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
           SELECT
             program_days.id_program_day,
             COALESCE(
-              ROUND(
+              LEAST(100, GREATEST(0, ROUND(
                 AVG(
                   COALESCE(
                     (SELECT ROUND(
                       COUNT(CASE WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1 END)::decimal /
-                      GREATEST(COUNT(workout_exercise_set.id_workout_exercise_set), 1), 2
+                      NULLIF(workout_day_exercises.sets, 0), 2
                     )
                     FROM workout_exercise_set
                     WHERE workout_exercise_set.id_workout_day_exercises = workout_day_exercises.id_workout_day_exercise),
                     0
                   )
                 ), 2
-              ), 0
+              ))), 0
             ) as day_progress
           FROM program_days
           INNER JOIN program_weeks ON program_days.id_program_week = program_weeks.id_program_week

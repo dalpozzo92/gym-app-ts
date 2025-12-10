@@ -44,7 +44,7 @@ import CircularProgress from '@/components/CircularProgress';
 import LiquidGlassModal from '@/components/LiquidGlassModal';
 import { buildRoute } from '@/routes';
 import { useProgramDays } from '@/hooks/useProgram';
-import { useWeekWorkoutExercises, useWorkoutDayExercises, useRefreshProgress } from '@/hooks/useWorkout';
+import { useWeekWorkoutExercises, useWorkoutDayExercises } from '@/hooks/useWorkout';
 import { completeWeek } from '@/api/workout';
 
 // ============================================
@@ -64,7 +64,7 @@ const WeekChip: React.FC<WeekChipProps> = ({ weekData, isSelected, onClick }) =>
       className="ion-activatable week-chip-wrapper"
       onClick={onClick}
       animate={{
-        scale: isSelected ? 1.1 : 1,
+        scale: isSelected ? 1.2 : 1,
         y: isSelected ? -2 : 0
       }}
       transition={{
@@ -90,7 +90,7 @@ const WeekChip: React.FC<WeekChipProps> = ({ weekData, isSelected, onClick }) =>
         height: '100%'
       }}>
         <CircularProgress
-          percentage={progress * 100}
+          percentage={progress}
           size={50}
           strokeWidth={3}
           color='progressColor'
@@ -112,10 +112,10 @@ const WeekChip: React.FC<WeekChipProps> = ({ weekData, isSelected, onClick }) =>
             alignItems: 'center',
             justifyContent: 'center',
             background: isSelected ? 'var(--ion-select-color)' : 'var(--ion-background-color)',
-            color: isSelected ? 'var(--ion-color-primary-contrast)' : 'var(--ion-text-color)',
-            fontWeight: isSelected ? 'bold' : '600',
+            color: isSelected ? 'var(--ion-text-color)' : 'var(--ion-select-color)',
+            fontWeight: isSelected ? 'bold' : '500',
             fontSize: '0.75rem',
-            boxShadow: isSelected ? '0 2px 8px rgba(var(--ion-select-color), 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+            boxShadow: isSelected ? '0 2px 8px rgba(var(--ion-color-primary-rgb), 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
             zIndex: 2
           }}
         >
@@ -216,7 +216,7 @@ const ProgramDay: React.FC<ProgramDayProps> = ({
 
               <IonCol size="auto">
                 <CircularProgress
-                  percentage={actualProgress * 100}
+                  percentage={actualProgress}
                   size={40}
                   strokeWidth={3}
                   color='progressColor'
@@ -314,7 +314,7 @@ const ProgramDay: React.FC<ProgramDayProps> = ({
                       <IonRow className="ion-align-items-center">
                         <IonCol size="auto" className="ion-padding-end">
                           <CircularProgress
-                            percentage={exerciseProgress * 100}
+                            percentage={exerciseProgress}
                             size={36}
                             strokeWidth={3}
                             color='progressColor'
@@ -378,45 +378,72 @@ const ProgramWeeks: React.FC = () => {
   const {
     activeProgram,
     program_weeks,
-    activeWeek: initialWeek,
+    activeWeek: initialWeek, // Active week is the "current progress" week
+    viewedWeek,             // Viewed week is the one user is looking at
+    setViewedWeek,
+    expandedDayIds,         // Expanded accordions state
+    setExpandedDayIds,
     isLoading: isProgramLoading,
     error: programError,
     refetchProgram
   } = useProgram();
 
-  // ✅ FIX: Inizializza selectedWeek solo quando initialWeek è disponibile
-  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [direction, setDirection] = useState<number>(0);
   const [showToast, setShowToast] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string>('');
   const [isInfoModalOpen, setIsInfoModalOpen] = useState<boolean>(false);
   const [isCompleteWeekModalOpen, setIsCompleteWeekModalOpen] = useState<boolean>(false);
   const [isCompletingWeek, setIsCompletingWeek] = useState<boolean>(false);
-  const [openAccordions, setOpenAccordions] = useState<number[]>([]);
-  const accordionGroupRef = useRef<HTMLIonAccordionGroupElement>(null);
 
-  // ✅ NUOVO: State locale per progress aggiornati
+  // Local ref for DOM elements
+  const accordionGroupRef = useRef<HTMLIonAccordionGroupElement>(null);
+  const weeksScrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // State locale per progress aggiornati (questo è effimero e può restare locale, o spostato in context se necessario, ma per ora il focus è la navigazione)
   const [progressOverrides, setProgressOverrides] = useState<{
     exercises: Record<number, number>;
     days: Record<number, number>;
-    week: number | null;
   }>({
     exercises: {},
-    days: {},
-    week: null
+    days: {}
   });
 
-  // ✅ NUOVO: Hook per refresh progress
-  const { refreshProgress } = useRefreshProgress();
-
-  // ✅ FIX: Imposta selectedWeek solo la prima volta quando arriva initialWeek
+  // ✅ Inizializza viewedWeek se non presente nel context (fallback)
   useEffect(() => {
-    if (initialWeek && selectedWeek === null) {
-      setSelectedWeek(initialWeek);
+    if (initialWeek && viewedWeek === null) {
+      setViewedWeek(initialWeek);
     }
-  }, [initialWeek, selectedWeek]);
+  }, [initialWeek, viewedWeek, setViewedWeek]);
 
-  const selectedWeekData = selectedWeek ? program_weeks.find((w: any) => w.week_number === selectedWeek) : null;
+  // ✅ Auto-scroll alla settimana selezionata (viewedWeek)
+  useEffect(() => {
+    if (viewedWeek !== null && weeksScrollContainerRef.current && program_weeks.length > 0) {
+      const timer = setTimeout(() => {
+        const container = weeksScrollContainerRef.current;
+        if (!container) return;
+
+        const selectedIndex = program_weeks.findIndex((w: any) => w.week_number === viewedWeek);
+        if (selectedIndex === -1) return;
+
+        // Ogni chip: 50px width + 16px margin (8px left + 8px right)
+        const chipWidth = 66;
+        const chipPosition = selectedIndex * chipWidth;
+
+        // Calcola lo scroll per centrare il chip
+        const containerWidth = container.offsetWidth;
+        const scrollPosition = chipPosition - (containerWidth / 2) + (chipWidth / 2);
+
+        container.scrollTo({
+          left: Math.max(0, scrollPosition),
+          behavior: 'smooth'
+        });
+      }, 150);
+
+      return () => clearTimeout(timer);
+    }
+  }, [viewedWeek, program_weeks]);
+
+  const selectedWeekData = viewedWeek ? program_weeks.find((w: any) => w.week_number === viewedWeek) : null;
 
   const {
     data: program_days,
@@ -435,89 +462,35 @@ const ProgramWeeks: React.FC = () => {
       }));
   }, [program_days]);
 
-  // ✅ Listen for exercise progress updates and trigger week refresh
+  // ✅ Listen for exercise progress updates
   useEffect(() => {
-    const handleExerciseProgressUpdate = async () => {
-      console.log('🔄 [ProgramWeeks] Exercise progress update detected');
+    const handleExerciseProgressUpdate = (e: any) => {
+      const { exerciseId, progress } = e.detail;
+      console.log('🔄 [ProgramWeeks] Exercise progress update:', exerciseId, progress);
 
-      // ✅ Refresh progress della settimana attiva
-      if (selectedWeekData?.id_program_week) {
-        const progressData = await refreshProgress(selectedWeekData.id_program_week as number);
-
-        if (progressData) {
-          // ✅ Aggiorna state locale con i nuovi progress
-          const exerciseProgress: Record<number, number> = {};
-          const dayProgress: Record<number, number> = {};
-
-          progressData.days.forEach((day: any) => {
-            dayProgress[day.id_program_day] = day.progress;
-            day.exercises.forEach((ex: any) => {
-              exerciseProgress[ex.id_workout_day_exercise] = ex.progress;
-            });
-          });
-
-          setProgressOverrides({
-            exercises: exerciseProgress,
-            days: dayProgress,
-            week: progressData.week_progress
-          });
+      setProgressOverrides(prev => ({
+        ...prev,
+        exercises: {
+          ...prev.exercises,
+          [exerciseId]: progress
         }
-      }
+      }));
     };
 
-    window.addEventListener('exercise:progress:update', handleExerciseProgressUpdate);
-    return () => window.removeEventListener('exercise:progress:update', handleExerciseProgressUpdate);
-  }, [selectedWeekData, refreshProgress]);
-
-  // ✅ Refresh iniziale dei progress quando viene selezionata una settimana
-  useEffect(() => {
-    const loadInitialProgress = async () => {
-      if (selectedWeekData?.id_program_week && visibleProgramDays.length > 0) {
-        console.log('🔄 [ProgramWeeks] Caricamento progress iniziale per settimana:', selectedWeekData.id_program_week);
-
-        const progressData = await refreshProgress(selectedWeekData.id_program_week as number);
-
-        if (progressData) {
-          const exerciseProgress: Record<number, number> = {};
-          const dayProgress: Record<number, number> = {};
-
-          progressData.days.forEach((day: any) => {
-            dayProgress[day.id_program_day] = day.progress;
-            day.exercises.forEach((ex: any) => {
-              exerciseProgress[ex.id_workout_day_exercise] = ex.progress;
-            });
-          });
-
-          setProgressOverrides({
-            exercises: exerciseProgress,
-            days: dayProgress,
-            week: progressData.week_progress
-          });
-        }
-      }
-    };
-
-    loadInitialProgress();
-  }, [selectedWeekData?.id_program_week, visibleProgramDays.length, refreshProgress]);
+    window.addEventListener('exercise:progress:update', handleExerciseProgressUpdate as EventListener);
+    return () => window.removeEventListener('exercise:progress:update', handleExerciseProgressUpdate as EventListener);
+  }, []);
 
   const {
     data: weekExercisesData,
     error: weekExercisesError
   } = useWeekWorkoutExercises((selectedWeekData as any)?.id_program_week || null);
 
-  console.log('🔍 [ProgramWeeks] State:', {
-    openAccordions,
-    visibleProgramDays: visibleProgramDays.length,
-    selectedWeek,
-    initialWeek,
-    weekExercisesData
-  });
-
-  // ✅ FIX: Mostra loading finché non abbiamo settimana attiva E giorni caricati
-  const isLoading = isProgramLoading || selectedWeek === null || (isDaysLoading && visibleProgramDays.length === 0);
+  // ✅ Fix loading check: usa viewedWeek
+  const isLoading = isProgramLoading || viewedWeek === null;
   const error = programError || daysError || weekExercisesError;
 
-  // ✅ Calcola progress della settimana (media di tutti i giorni)
+  // ✅ Calcola progress della settimana
   const weekProgress = useMemo(() => {
     if (!visibleProgramDays || visibleProgramDays.length === 0) return 0;
     const totalProgress = visibleProgramDays.reduce((sum: number, day: any) => sum + (day.progress || 0), 0);
@@ -538,22 +511,25 @@ const ProgramWeeks: React.FC = () => {
   }, [refetchProgram]);
 
   const selectWeek = useCallback((weekNumber: number) => {
-    setDirection(weekNumber > (selectedWeek || 0) ? 1 : -1);
-    setSelectedWeek(weekNumber);
-    setOpenAccordions([]);
+    // ✅ Non fare nulla se clicchi sulla settimana già selezionata
+    if (weekNumber === viewedWeek) return;
+
+    setDirection(weekNumber > (viewedWeek || 0) ? 1 : -1);
+    setViewedWeek(weekNumber);
+    // ✅ Resetta accordion quando cambi settimana, per pulizia UI
+    setExpandedDayIds([]);
+
     // ✅ Reset progress override quando cambio settimana
     setProgressOverrides({
       exercises: {},
-      days: {},
-      week: null
+      days: {}
     });
-  }, [selectedWeek]);
+  }, [viewedWeek, setViewedWeek, setExpandedDayIds]);
 
   const handleAccordionChange = useCallback((event: CustomEvent) => {
     console.log('🔍 [ProgramWeeks] Accordion event:', event.detail);
 
     const value = event.detail.value;
-
     const accordionValues = Array.isArray(value) ? value : (value ? [value] : []);
 
     console.log('🔍 [ProgramWeeks] Accordion values:', accordionValues);
@@ -565,10 +541,10 @@ const ProgramWeeks: React.FC = () => {
       })
       .filter(Boolean) as number[];
 
-    console.log('🔍 [ProgramWeeks] IDs aperti:', openDayIds);
+    console.log('🔍 [ProgramWeeks] IDs aperti salvati in context:', openDayIds);
 
-    setOpenAccordions(openDayIds);
-  }, []);
+    setExpandedDayIds(openDayIds);
+  }, [setExpandedDayIds]);
 
   const handleClickDay = useCallback((id_program_day: number) => {
     console.log('📍 [handleClickDay] Navigazione con id_program_day:', id_program_day);
@@ -585,14 +561,14 @@ const ProgramWeeks: React.FC = () => {
 
   // ✅ Determina se mostrare il pulsante "Completa settimana"
   const canCompleteWeek = useMemo(() => {
-    if (!selectedWeek || !program_weeks.length) return false;
+    if (!viewedWeek || !program_weeks.length) return false;
 
     // Trova la settimana con week_number massimo
     const maxWeekNumber = Math.max(...program_weeks.map((w: any) => w.week_number));
 
     // Mostra solo se la settimana selezionata è l'ultima
-    return selectedWeek === maxWeekNumber;
-  }, [selectedWeek, program_weeks]);
+    return viewedWeek === maxWeekNumber;
+  }, [viewedWeek, program_weeks]);
 
   // ✅ Completa effettivamente la settimana (chiamata API)
   const handleConfirmCompleteWeek = useCallback(async () => {
@@ -609,7 +585,7 @@ const ProgramWeeks: React.FC = () => {
       await refetchProgram();
 
       // Seleziona la nuova settimana
-      setSelectedWeek(result.new_week_number);
+      setViewedWeek(result.new_week_number);
 
       setToastMessage('Settimana completata! Nuova settimana creata.');
       setShowToast(true);
@@ -621,23 +597,22 @@ const ProgramWeeks: React.FC = () => {
     } finally {
       setIsCompletingWeek(false);
     }
-  }, [selectedWeekData, refetchProgram]);
+  }, [selectedWeekData, refetchProgram, setViewedWeek]);
 
   // ✅ Gestisce click sul pulsante "Completa settimana"
   const handleCompleteWeekClick = useCallback(() => {
-    // Calcola progress attuale (usa override se disponibile, altrimenti weekProgress)
-    const currentProgress = progressOverrides.week !== null
-      ? progressOverrides.week
-      : weekProgress;
+    // Usa il progress della settimana selezionata (calcolato dal backend in getProgramWeeks)
+    const currentWeekData = program_weeks.find((w: any) => w.week_number === viewedWeek);
+    const currentProgress = currentWeekData?.progress || 0;
 
-    if (currentProgress < 1) {
+    if (currentProgress < 100) {
       // Settimana non completata - mostra modal di conferma
       setIsCompleteWeekModalOpen(true);
     } else {
       // Settimana completata - procedi direttamente
       handleConfirmCompleteWeek();
     }
-  }, [progressOverrides.week, weekProgress, handleConfirmCompleteWeek]);
+  }, [program_weeks, viewedWeek, handleConfirmCompleteWeek]);
 
   useEffect(() => {
     if (error) {
@@ -830,7 +805,7 @@ const ProgramWeeks: React.FC = () => {
             </h1>
           </IonText>
 
-          {selectedWeek && (
+          {viewedWeek && (
             <div style={{
               display: 'flex',
               gap: '8px',
@@ -840,18 +815,22 @@ const ProgramWeeks: React.FC = () => {
             }}>
               <IonChip color="primary" outline={true}>
                 <IonIcon icon={barbellOutline} />
-                <IonLabel>Settimana {selectedWeek}</IonLabel>
+                <IonLabel>Settimana {viewedWeek}</IonLabel>
               </IonChip>
             </div>
           )}
         </div>
 
-        <div className="weeks-scroll-container" style={{
-          display: 'flex',
-          overflowX: 'auto',
-          scrollBehavior: 'smooth',
-          WebkitOverflowScrolling: 'touch'
-        }}>
+        <div
+          ref={weeksScrollContainerRef}
+          className="weeks-scroll-container"
+          style={{
+            display: 'flex',
+            overflowX: 'auto',
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
           {isProgramLoading ? (
             Array(6).fill(0).map((_, i) => (
               <div key={`skeleton-week-${i}`} style={{ display: 'inline-block', flexShrink: 0 }}>
@@ -866,21 +845,12 @@ const ProgramWeeks: React.FC = () => {
             ))
           ) : program_weeks.length > 0 ? (
             program_weeks.map((weekData: any) => {
-              // ✅ Usa progress override se disponibile, altrimenti weekProgress calcolato
-              const isSelectedWeek = selectedWeek !== null && selectedWeek === weekData.week_number;
-              let progressToUse = weekData.progress;
-
-              if (isSelectedWeek) {
-                // ✅ Usa prima override, poi weekProgress calcolato, poi default
-                progressToUse = progressOverrides.week !== null
-                  ? progressOverrides.week
-                  : weekProgress;
-              }
+              const isSelectedWeek = viewedWeek !== null && viewedWeek === weekData.week_number;
 
               return (
                 <WeekChip
                   key={`week-${weekData.week_number}`}
-                  weekData={{ ...weekData, progress: progressToUse }}
+                  weekData={weekData}
                   isSelected={isSelectedWeek}
                   onClick={() => selectWeek(weekData.week_number)}
                 />
@@ -893,10 +863,10 @@ const ProgramWeeks: React.FC = () => {
           )}
         </div>
 
-        {selectedWeek && (
+        {viewedWeek && (
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
-              key={selectedWeek}
+              key={viewedWeek}
               custom={direction}
               variants={pageVariants}
               initial="enter"
@@ -911,7 +881,7 @@ const ProgramWeeks: React.FC = () => {
                 paddingRight: '16px'
               }}>
                 <IonLabel>
-                  <IonText className="fw-bold text-medium">Settimana {selectedWeek}</IonText>
+                  <IonText className="fw-bold text-medium">Settimana {viewedWeek}</IonText>
                 </IonLabel>
 
                 {/* Pulsante Completa Settimana */}
@@ -944,8 +914,8 @@ const ProgramWeeks: React.FC = () => {
                 )}
               </IonListHeader>
 
-              {isDaysLoading ? (
-                // ✅ Skeleton durante il caricamento dei giorni
+              {isDaysLoading && visibleProgramDays.length === 0 ? (
+                // ✅ Skeleton durante il caricamento iniziale dei giorni
                 <div className="ion-padding">
                   {Array(4).fill(0).map((_, i) => (
                     <IonCard key={`skeleton-day-${i}`}>
@@ -960,7 +930,7 @@ const ProgramWeeks: React.FC = () => {
                 <IonAccordionGroup
                   ref={accordionGroupRef}
                   multiple={true}
-                  value={openAccordions.map(id => `day-${id}`)}
+                  value={expandedDayIds.map(id => `day-${id}`)}
                   onIonChange={handleAccordionChange}
                 >
                   {/* ✅ Usa dati diretti dal backend - più semplice e affidabile */}
@@ -971,7 +941,7 @@ const ProgramWeeks: React.FC = () => {
                       displayDayNumber={program_day.displayDayNumber || 1}
                       onClickExercise={handleClickExercise}
                       onClickDay={handleClickDay}
-                      isOpen={openAccordions.includes(program_day.id_program_day)}
+                      isOpen={expandedDayIds.includes(program_day.id_program_day)}
                       preloadedExercises={(weekExercisesData as any)?.week_exercises?.[program_day.id_program_day]}
                       progressOverride={progressOverrides.days[program_day.id_program_day]}
                       exerciseProgressOverrides={progressOverrides.exercises}

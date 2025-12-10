@@ -49,4 +49,38 @@ export default async function usersRoutes(fastify: FastifyInstance) {
             return reply.code(500).send({ message: 'Errore nel recupero degli utenti' });
         }
     });
+
+    fastify.get('/trainer-theme', { preHandler: authenticateUser }, async (req: FastifyRequest, reply: FastifyReply) => {
+        debug('[getTrainerTheme] Recupero tema personal trainer');
+        try {
+            if (!req.user) return reply.code(401).send({ message: 'Unauthorized' });
+
+            // 2. Recupera i colori dal record del PT
+            // Assiamo che le colonne siano color_primary, color_secondary, color_tertiary
+            const trainerRes = await sql`
+                SELECT color_primary, color_secondary, color_tertiary
+                FROM personal_trainer_theme
+                LEFT JOIN user_details ON personal_trainer_theme.id_personal_trainer = user_details.id_personal_trainer
+                WHERE user_details.uuid_auth = ${req.user.userId}
+            `;
+
+            if (!trainerRes.length) {
+                return reply.send({ theme: null });
+            }
+
+            const theme = trainerRes[0];
+
+            // Se non ci sono colori impostati, ritorna null
+            if (!theme.color_primary) {
+                return reply.send({ theme: null });
+            }
+
+            return reply.send({ theme });
+
+        } catch (error) {
+            debug('[getTrainerTheme] Errore:', error);
+            // Non blocchiamo l'app per questo, torniamo null
+            return reply.send({ theme: null });
+        }
+    });
 }

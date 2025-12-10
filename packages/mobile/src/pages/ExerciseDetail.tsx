@@ -69,7 +69,7 @@ import { useBeforeUnloadWarning } from '@/hooks/useBeforeUnloadWarning';
 import ModaleModificheNonSalvate from '@/components/ModaleModificheNonSalvate';
 import { getAllPendingOps } from '@/db/dexie';
 import BilanciereLoader from '@/components/BilanciereLoader';
-import { getPreviousWorkoutExerciseSet } from '@/api/workout';
+import { getPreviousWorkoutExerciseSet, syncWorkoutExerciseSets } from '@/api/workout';
 
 // ============================================
 // EXERCISE CHIP COMPONENT (CON ANIMAZIONI)
@@ -88,16 +88,75 @@ const ExerciseChip = ({ workout_day_exercise, isSelected, onClick, progress: ini
   }, [initialProgress, prevProgress]);
 
   return (
+    // <motion.div
+    //   className="ion-activatable"
+    //   onClick={onClick}
+    //   animate={{
+    //     scale: isSelected ? 1.05 : animateProgress ? [1, 1.15, 1] : 1,
+    //     y: isSelected ? -2 : 0
+    //   }}
+    //   transition={{
+    //     scale: { duration: animateProgress ? 0.4 : 0.2, ease: "easeOut" },
+    //     y: { duration: 0.2, ease: "easeInOut" }
+    //   }}
+    //   style={{
+    //     position: 'relative',
+    //     width: '50px',
+    //     height: '50px',
+    //     margin: '8px',
+    //     display: 'inline-block',
+    //     flexShrink: 0,
+    //     cursor: 'pointer',
+    //     borderRadius: '50%'
+    //   }}
+    // >
+    //   <CircularProgress
+    //     percentage={initialProgress}
+    //     size={50}
+    //     strokeWidth={3}
+    //     color='progressColor'
+    //     backgroundColor={isSelected ? 'rgba(var(--ion-color-primary-rgb), 0.2)' : 'rgba(var(--ion-color-medium-rgb), 0.1)'}
+    //     showText={false}
+    //     duration={0.6}
+    //   />
+
+    //   <div
+    //     style={{
+    //       position: 'absolute',
+    //       top: '50%',
+    //       left: '50%',
+    //       transform: 'translate(-50%, -50%)',
+    //       width: '36px',
+    //       height: '36px',
+    //       borderRadius: '50%',
+    //       display: 'flex',
+    //       alignItems: 'center',
+    //       justifyContent: 'center',
+    //       background: isSelected ? 'var(--ion-select-color)' : 'var(--ion-background-color)',
+    //       color: isSelected ? 'var(--ion-text-color)' : 'var(--ion-select-color)',
+    //       fontWeight: isSelected ? 'bold' : '500',
+    //       fontSize: '0.75rem',
+    //       boxShadow: isSelected ? '0 2px 8px rgba(var(--ion-color-primary-rgb), 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+    //       zIndex: 2
+    //     }}
+    //   >
+    //     {exerciseNumber}°
+    //   </div>
+
+    //   <IonRippleEffect />
+    // </motion.div>
+
     <motion.div
-      className="ion-activatable"
+      className="ion-activatable week-chip-wrapper"
       onClick={onClick}
       animate={{
-        scale: isSelected ? 1.05 : animateProgress ? [1, 1.15, 1] : 1,
+        scale: isSelected ? 1.2 : 1,
         y: isSelected ? -2 : 0
       }}
       transition={{
-        scale: { duration: animateProgress ? 0.4 : 0.2, ease: "easeOut" },
-        y: { duration: 0.2, ease: "easeInOut" }
+        type: "spring",
+        stiffness: 300,
+        damping: 20
       }}
       style={{
         position: 'relative',
@@ -105,42 +164,49 @@ const ExerciseChip = ({ workout_day_exercise, isSelected, onClick, progress: ini
         height: '50px',
         margin: '8px',
         display: 'inline-block',
+        verticalAlign: 'middle',
         flexShrink: 0,
         cursor: 'pointer',
         borderRadius: '50%'
       }}
     >
-      <CircularProgress
-        percentage={initialProgress}
-        size={50}
-        strokeWidth={3}
-        color='progressColor'
-        backgroundColor={isSelected ? 'rgba(var(--ion-color-primary-rgb), 0.2)' : 'rgba(var(--ion-color-medium-rgb), 0.1)'}
-        showText={false}
-        duration={0.6}
-      />
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%'
+      }}>
+        <CircularProgress
+          percentage={initialProgress}
+          size={50}
+          strokeWidth={3}
+          color='progressColor'
+          backgroundColor={isSelected ? 'rgba(var(--ion-color-primary-rgb), 0.2)' : 'rgba(var(--ion-color-medium-rgb), 0.1)'}
+          showText={false}
+          duration={1}
+        />
 
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '36px',
-          height: '36px',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: isSelected ? 'var(--ion-select-color)' : 'var(--ion-background-color)',
-          color: isSelected ? 'var(--ion-color-primary-contrast)' : 'var(--ion-text-color)',
-          fontWeight: '600',
-          fontSize: '0.7rem',
-          boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.15)' : '0 1px 3px rgba(0,0,0,0.1)',
-          zIndex: 2
-        }}
-      >
-        {exerciseNumber}°
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: isSelected ? 'var(--ion-select-color)' : 'var(--ion-background-color)',
+            color: isSelected ? 'var(--ion-text-color)' : 'var(--ion-select-color)',
+            fontWeight: isSelected ? 'bold' : '500',
+            fontSize: '0.75rem',
+            boxShadow: isSelected ? '0 2px 8px rgba(var(--ion-color-primary-rgb), 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+            zIndex: 2
+          }}
+        >
+          {exerciseNumber}
+        </div>
       </div>
 
       <IonRippleEffect />
@@ -328,7 +394,8 @@ const RestTimer = ({ seconds, timerId, activeTimerId, setActiveTimerId }) => {
 // PERFORMANCE COMPARISON COMPONENT
 // ============================================
 const PerformanceComparison = ({ previous, current }) => {
-  if (!previous || (!current.actual_load && !current.actual_reps)) return null;
+  // ✅ Mostra solo se ENTRAMBI load E reps sono > 0 (non solo uno dei due)
+  if (!previous || !(current.actual_load > 0 && current.actual_reps > 0)) return null;
 
   const weightDiff = current.actual_load - previous.load;
   const repsDiff = current.actual_reps - previous.reps;
@@ -599,6 +666,22 @@ const SerieCard = ({
     debouncedSave('actual_reps', newReps);
   };
 
+  // ✅ Gestione focus input: seleziona tutto se il valore è 0
+  const handleInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    const input = event.target;
+    const value = input.value;
+
+    // Se il valore è 0, seleziona tutto (così viene sovrascritto al primo input)
+    if (value === '0') {
+      // ✅ Usa setTimeout per assicurarsi che il focus sia completato
+      setTimeout(() => {
+        input.select();
+      }, 0);
+    }
+    // ✅ NOTA: Non possiamo usare setSelectionRange con input type="number"
+    // Il browser gestisce automaticamente il cursore
+  };
+
   const updateRPE = (value) => {
     setRpe(value);
     onUpdateSet(setIndex, { rpe: value });
@@ -683,6 +766,7 @@ const SerieCard = ({
                       type="number"
                       value={load}
                       onChange={(e) => handleLoadInput(e.target.value)}
+                      onFocus={handleInputFocus}
                       inputMode="decimal"
                     />
                     <IonButton
@@ -713,6 +797,7 @@ const SerieCard = ({
                       type="number"
                       value={reps}
                       onChange={(e) => handleRepsInput(e.target.value)}
+                      onFocus={handleInputFocus}
                       inputMode="numeric"
                     />
                     <IonButton
@@ -885,7 +970,8 @@ const SetsManager = ({
       updateSet({ setId: target.setId, field: field as any, value });
 
       // ✅ Calcola progress usando i valori più recenti dal ref
-      const totalSets = sets.length;
+      // Usa set prescritti (workout_day_exercise.sets) come denominatore, non i record nello state
+      const totalSets = workout_day_exercise?.sets || sets.length;
       const completedSets = sets.filter((s) => {
         const pending = pendingSetsRef.current[s.setId] || {};
         const load = pending.actual_load !== undefined ? pending.actual_load : (s.actual_load || 0);
@@ -915,7 +1001,8 @@ const SetsManager = ({
 
   // ✅ Calcola progress in tempo reale basato su set completati (solo per riferimento interno)
   const exerciseProgress = useMemo(() => {
-    const totalSets = setsState.length;
+    // Usa set prescritti (workout_day_exercise.sets) come denominatore, non i record nello state
+    const totalSets = workout_day_exercise?.sets || setsState.length;
     if (totalSets === 0) return 0;
 
     const completedSets = setsState.filter(s => {
@@ -925,7 +1012,7 @@ const SetsManager = ({
     }).length;
 
     return Math.round((completedSets / totalSets) * 100);
-  }, [setsState]);
+  }, [setsState, workout_day_exercise?.sets]);
 
   if (setsState.length === 0) {
     return (
@@ -1132,11 +1219,17 @@ const ExerciseDetail = () => {
     if (workout_day_exercises.length > 0) {
       const initialProgress: Record<string, number> = {};
       workout_day_exercises.forEach((exercise: any) => {
-        const sets = exercise.workout_exercise_sets || [];
-        const completedSets = sets.filter((s: any) => (s.actual_load || 0) > 0 && (s.actual_reps || 0) > 0).length;
-        const totalSets = sets.length || 1;
-        const progress = (completedSets / totalSets) * 100;
-        initialProgress[exercise.id_workout_day_exercise] = progress;
+        // ✅ Usa il campo progress calcolato dal backend (già corretto con set prescritti)
+        // Se non disponibile, calcola manualmente usando exercise.sets (set prescritti)
+        if (exercise.progress !== undefined) {
+          initialProgress[exercise.id_workout_day_exercise] = exercise.progress;
+        } else {
+          const sets = exercise.workout_exercise_sets || [];
+          const completedSets = sets.filter((s: any) => (s.actual_load || 0) > 0 && (s.actual_reps || 0) > 0).length;
+          const totalSets = exercise.sets || sets.length || 1; // Usa set prescritti, non record esistenti
+          const progress = Math.round((completedSets / totalSets) * 100);
+          initialProgress[exercise.id_workout_day_exercise] = progress;
+        }
       });
       setExerciseProgressMap(initialProgress);
     }
@@ -1194,6 +1287,83 @@ const ExerciseDetail = () => {
   useBeforeUnloadWarning();
   useEffect(() => { return () => { flushPendingOpsNow(); }; }, []);
 
+  // ✅ FASE 1: Gestione beforeunload con sendBeacon per salvataggio garantito su chiusura
+  useEffect(() => {
+    const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
+      console.log('🚪 [ExerciseDetail] beforeunload triggered');
+
+      try {
+        // 1. Ottieni tutte le pending ops
+        const pendingOps = await getAllPendingOps();
+
+        if (pendingOps.length === 0) {
+          console.log('✅ [ExerciseDetail] Nessuna pending op da salvare');
+          return;
+        }
+
+        console.log('📤 [ExerciseDetail] Invio', pendingOps.length, 'pending ops con sendBeacon');
+
+        // 2. Raggruppa pending ops per set (stesso formato di useSyncWorker)
+        const groupedBySet = pendingOps.reduce((acc: any, op: any) => {
+          const key = `${op.exerciseId}-${op.setId}`;
+          if (!acc[key]) {
+            acc[key] = {
+              id_workout_day_exercises: op.exerciseId,
+              set_number: parseInt(op.setId, 10)
+            };
+          }
+          acc[key][op.field] = op.value;
+          return acc;
+        }, {});
+
+        const payload = { sets: Object.values(groupedBySet) };
+
+        // 3. Usa sendBeacon per invio NON bloccante garantito
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        const beaconUrl = `${window.location.origin}/api/workouts/syncWorkoutExerciseSets`;
+
+        if ('sendBeacon' in navigator) {
+          const sent = navigator.sendBeacon(beaconUrl, blob);
+          if (sent) {
+            console.log('✅ [ExerciseDetail] sendBeacon inviato con successo');
+          } else {
+            console.warn('⚠️ [ExerciseDetail] sendBeacon fallito, dati troppo grandi?');
+          }
+        } else {
+          // Fallback per browser senza sendBeacon
+          console.warn('⚠️ [ExerciseDetail] sendBeacon non supportato, uso fetch keepalive');
+          fetch(beaconUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true // Garantisce che la richiesta continui dopo chiusura pagina
+          }).catch(err => console.error('❌ [ExerciseDetail] Fetch keepalive fallito:', err));
+        }
+      } catch (error) {
+        console.error('❌ [ExerciseDetail] Errore in beforeunload:', error);
+      }
+
+      // Non mostriamo il dialog di conferma - lasciamo uscire l'utente
+      // e ci fidiamo di sendBeacon per salvare i dati
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // ✅ FASE 1: Gestione visibilitychange per flush quando app va in background
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'hidden') {
+        console.log('👁️ [ExerciseDetail] App in background, flush immediato');
+        await flushPendingOpsNow();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   const selectExercise = useCallback((exerciseIndex) => {
     if (exerciseIndex === selectedExerciseIndex || !workout_day_exercises.length) return;
     const newExercise = workout_day_exercises[exerciseIndex];
@@ -1206,12 +1376,13 @@ const ExerciseDetail = () => {
   };
 
   const handleBackToProgramWeeks = useCallback(() => {
+    // ✅ Navigazione esplicita al programma per garantire il ritorno alla vista corretta
     if (resolvedProgramId) {
-      history.push(`/programWeeks/${resolvedProgramId}`);
+      history.push(buildRoute.programWeeks(resolvedProgramId));
     } else {
-      history.goBack();
+      history.goBack(); // Fallback se non c'è ID programma
     }
-  }, [resolvedProgramId, history]);
+  }, [history, resolvedProgramId]);
 
   // Loading State for the Page (List of exercises)
   if (isLoadingDayExercises) {
@@ -1467,7 +1638,7 @@ const ExerciseDetail = () => {
                           // ✅ Calcola sets completati per il testo
                           const sets = ex.workout_exercise_sets || [];
                           const completed = sets.filter((s: any) => (s.actual_load || 0) > 0 && (s.actual_reps || 0) > 0).length;
-                          const total = sets.length || 1;
+                          const total = ex.sets || sets.length || 1; // Usa set prescritti, non record esistenti
 
                           return (
                             <motion.div

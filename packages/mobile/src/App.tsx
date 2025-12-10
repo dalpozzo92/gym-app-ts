@@ -28,8 +28,8 @@ const ExerciseDetail = lazy(() => import('@/pages/ExerciseDetail'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 
 const App: React.FC = () => (
-  <ThemeProvider>
-    <AuthProvider>
+  <AuthProvider>
+    <ThemeProvider>
       <ProgramProvider>
         <IonApp>
           <IonReactRouter>
@@ -37,8 +37,8 @@ const App: React.FC = () => (
           </IonReactRouter>
         </IonApp>
       </ProgramProvider>
-    </AuthProvider>
-  </ThemeProvider>
+    </ThemeProvider>
+  </AuthProvider>
 );
 
 type RouteComponent = ComponentType;

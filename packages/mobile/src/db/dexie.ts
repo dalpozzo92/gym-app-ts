@@ -48,6 +48,11 @@ export interface AuthTokens {
   updatedAt: number;
 }
 
+export interface AppPreference {
+  key: string;
+  value: any;
+}
+
 // =========================================================
 // 🗄️ DEXIE DATABASE
 // =========================================================
@@ -56,6 +61,7 @@ class GymDatabase extends Dexie {
   exerciseCache!: Table<ExerciseCache, string>;
   pendingOps!: Table<PendingOp, string>;
   authTokens!: Table<AuthTokens, string>;
+  preferences!: Table<AppPreference, string>;
 
   constructor() {
     super('GymDB');
@@ -64,6 +70,10 @@ class GymDatabase extends Dexie {
       exerciseCache: 'exerciseId, lastSync',
       pendingOps: 'id, exerciseId, timestamp',
       authTokens: 'id'
+    });
+
+    this.version(2).stores({
+      preferences: 'key'
     });
   }
 }
@@ -149,6 +159,20 @@ export const clearAuthTokens = async (): Promise<void> => {
 };
 
 // =========================================================
+// 🔧 HELPER FUNCTIONS - PREFERENCES
+// =========================================================
+
+export const savePreference = async (key: string, value: any): Promise<void> => {
+  await db.preferences.put({ key, value });
+  console.log(`⚙️ [Dexie] Preferenza '${key}' salvata`);
+};
+
+export const getPreference = async <T = any>(key: string): Promise<T | undefined> => {
+  const pref = await db.preferences.get(key);
+  return pref?.value;
+};
+
+// =========================================================
 // 🧹 UTILITY - CLEAR ALL DATA
 // =========================================================
 
@@ -156,5 +180,6 @@ export const clearAllData = async (): Promise<void> => {
   await db.exerciseCache.clear();
   await db.pendingOps.clear();
   await db.authTokens.clear();
+  await db.preferences.clear();
   console.log('🧹 [Dexie] Tutti i dati cancellati');
 };

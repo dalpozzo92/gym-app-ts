@@ -37,42 +37,62 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      minify: false,
-      includeAssets: ['favicon.ico', 'robots.txt', 'icons/*'],
+      injectRegister: 'auto',
+      includeAssets: ['favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png'],
       devOptions: {
         enabled: true, // Attiva PWA anche in sviluppo
+        type: 'module',
       },
       manifest: {
         name: 'Gym App',
         short_name: 'GymApp',
         description: 'La tua app per il fitness!',
         start_url: '/',
+        scope: '/',
         display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#000000',
         theme_color: '#000000',
         icons: [
           {
-            src: '/web-app-manifest-192x192.png',
+            src: '/android-chrome-192x192.png',
             sizes: '192x192',
             type: 'image/png',
+            purpose: 'any maskable',
           },
           {
-            src: '/web-app-manifest-512x512.png',
+            src: '/android-chrome-512x512.png',
             sizes: '512x512',
             type: 'image/png',
+            purpose: 'any maskable',
           },
         ],
       },
       workbox: {
-        mode: 'development',
-        globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
-        sourcemap: true,
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fit-gilli-dalpozzo-3a79c772\.koyeb\.app\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60, // 1 hour
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       }
     }),
   ],
   server: {
     proxy: {
       '/api': {
-        target: 'https://gym-backend-production-7b12.up.railway.app', // URL del tuo backend su Railway
+        target: 'https://fit-gilli-dalpozzo-3a79c772.koyeb.app', // URL del tuo backend su Railway
         changeOrigin: true, // Impostato su true per evitare problemi con i CORS
         secure: false, // Se usi HTTP su backend, metti false
         rewrite: (path) => path.replace(/^\/api/, '') // Rimuove /api dalla richiesta

@@ -8,7 +8,7 @@
   --ion-color-primary-shade: #41d8ec;
   --ion-color-primary-shade-rgb: 65, 216, 236;
   --ion-color-primary-tint: #249aaa;
-  
+
   /* Colori secondari */
   --ion-color-secondary: #a370ff;
   --ion-color-secondary-rgb: 163, 112, 255;
@@ -16,35 +16,35 @@
   --ion-color-secondary-contrast-rgb: 255, 255, 255;
   --ion-color-secondary-shade: #8f63e0;
   --ion-color-secondary-tint: #ac7eff;
-  
+
   --ion-color-tertiary: #6a64ff;
   --ion-color-tertiary-rgb: 106, 100, 255;
   --ion-color-tertiary-contrast: #ffffff;
   --ion-color-tertiary-contrast-rgb: 255, 255, 255;
   --ion-color-tertiary-shade: #5d58e0;
   --ion-color-tertiary-tint: #7974ff;
-  
+
   --ion-color-success: #0f9679;
   --ion-color-success-rgb: 16, 185, 129;
   --ion-color-success-contrast: #ffffff;
   --ion-color-success-contrast-rgb: 255, 255, 255;
   --ion-color-success-shade: #0f8a61;
   --ion-color-success-tint: #229d74;
-  
+
   --ion-color-warning: #f59e0b;
   --ion-color-warning-rgb: 245, 158, 11;
   --ion-color-warning-contrast: #000000;
   --ion-color-warning-contrast-rgb: 0, 0, 0;
   --ion-color-warning-shade: #d88b0a;
   --ion-color-warning-tint: #f6a823;
-  
+
   --ion-color-danger: #ef4444;
   --ion-color-danger-rgb: 239, 68, 68;
   --ion-color-danger-contrast: #ffffff;
   --ion-color-danger-contrast-rgb: 255, 255, 255;
   --ion-color-danger-shade: #d23c3c;
   --ion-color-danger-tint: #f15757;
-  
+
   --ion-color-medium: #92949c;
   --ion-color-medium-rgb: 146, 148, 156;
   --ion-color-medium-contrast: #ffffff;
@@ -58,7 +58,7 @@
   --ion-color-medium-contrast-rgb: 255, 255, 255;
   --ion-color-medium-shade: #808289;
   --ion-color-medium-tint: #9d9fa6;
-  
+
   --ion-color-light: #f4f5f8;
   --ion-color-light-rgb: 244, 245, 248;
   --ion-color-light-contrast: #000000;
@@ -73,7 +73,7 @@
   --app-border-radius-lg: 16px;
   --app-border-radius-xl: 24px;
   --app-border-radius-pill: 9999px;
-  
+
   /* Applicazione dei bordi arrotondati ai componenti Ionic */
   --ion-card-border-radius: var(--app-border-radius-xl);
   --ion-item-border-radius: var(--app-border-radius-lg);
@@ -87,24 +87,24 @@
   --ion-popover-border-radius: var(--app-border-radius-xl);
   --ion-modal-border-radius: var(--app-border-radius-xl);
   --ion-action-sheet-border-radius: var(--app-border-radius-xl);
-  
+
   /* Ombre */
   --app-box-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
   --app-box-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
   --app-box-shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.3);
-  
+
   /* Applicazione delle ombre ai componenti Ionic */
   --ion-card-box-shadow: var(--app-box-shadow-md);
   --ion-item-box-shadow: none;
   --ion-tab-bar-box-shadow: var(--app-box-shadow-md);
-  
+
   /* Spaziatura */
   --app-spacing-xs: 4px;
   --app-spacing-sm: 8px;
   --app-spacing-md: 16px;
   --app-spacing-lg: 24px;
   --app-spacing-xl: 32px;
-  
+
   /* Applicazione della spaziatura ai componenti Ionic */
   --ion-padding: var(--app-spacing-md);
   --ion-margin: var(--app-spacing-md);
@@ -122,9 +122,9 @@
   --ion-background-color-rgb: 0, 0, 0;
   --ion-text-color: #ffffff;
   --ion-text-color-rgb: 255, 255, 255;
-  --ion-card-background: rgba(18, 18, 18, 0.301);
-  --ion-accordion-background: rgba(18, 18, 18, 0.021);
-  --ion-item-background: rgba(18, 18, 18, 0.719);
+  --ion-card-background: rgba(20, 39, 62, 0.152);
+  /* --ion-accordion-background: rgba(18, 18, 18, 0.021); */
+  /* --ion-item-background: rgba(18, 18, 18, 0.719); */
   --ion-toolbar-background: #121212;
   --ion-tab-bar-background: rgba(30, 30, 30, 0.95);
   --ion-border-color: #333333;
@@ -141,7 +141,7 @@
   --ion-background-color-rgb: 248, 249, 250;
   --ion-text-color: #333333;
   --ion-text-color-rgb: 51, 51, 51;
-  --ion-card-background:rgba(245, 245, 245, 0.301);
+  --ion-card-background: rgba(245, 245, 245, 0.301);
   --ion-accordion-background: rgba(245, 245, 245, 0.021);
   --ion-item-background: rgba(245, 245, 245, 0.519);
   --ion-toolbar-background: #ffffff;
@@ -195,8 +195,10 @@ ion-page::-webkit-scrollbar {
 }
 
 ion-page {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE 10+ */
 }
 
 
@@ -206,7 +208,7 @@ ion-card {
   overflow: hidden;
   box-shadow: var(--app-box-shadow-lg) !important;
   border: none;
-   /* Sfocatura del background */
+  /* Sfocatura del background */
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
   /* padding: var(--app-spacing-md);  */
@@ -219,8 +221,8 @@ ion-button {
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
-    /* Default outline style */
- --background: rgba(var(--ion-color-primary-shade-rgb), 0.7);
+  /* Default outline style */
+  --background: rgba(var(--ion-color-primary-shade-rgb), 0.7);
 }
 
 /* FAB button outline style */
@@ -238,7 +240,10 @@ ion-fab-button {
   --box-shadow: none;
 }
 
-ion-input, ion-textarea, ion-select, .list-ios {
+ion-input,
+ion-textarea,
+ion-select,
+.list-ios {
   /* --padding-start: var(--app-spacing-md);
   --padding-end: var(--app-spacing-md);
   --padding-top: var(--app-spacing-md);
@@ -247,7 +252,7 @@ ion-input, ion-textarea, ion-select, .list-ios {
   border-radius: var(--ion-input-border-radius);
   margin-bottom: var(--app-spacing-sm);
   /* font-size: 16px; */
-} 
+}
 
 ion-action-sheet {
   --background: var(--ion-action-sheet-background-color) !important;
@@ -283,43 +288,119 @@ ion-action-sheet {
 
 
 /* Utility classes for quick styling */
-.text-primary { color: var(--ion-color-primary) !important; }
-.text-secondary { color: var(--ion-color-secondary) !important; }
-.text-light { color: var(--ion-color-light) !important; }
-.text-dark { color: var(--ion-color-dark) !important; }
-.text-medium { color: var(--ion-color-medium) !important; }
+.text-primary {
+  color: var(--ion-color-primary) !important;
+}
 
-.bg-primary { background-color: var(--ion-color-primary) !important; }
-.bg-light { background-color: var(--ion-color-light) !important; }
-.bg-card { background-color: var(--ion-card-background) !important; }
-.bg-accordion { background-color: var(--ion-accordion-background) !important; }
+.text-secondary {
+  color: var(--ion-color-secondary) !important;
+}
 
-.rounded-md { border-radius: var(--app-border-radius-md) !important; }
-.rounded-lg { border-radius: var(--app-border-radius-lg) !important; }
-.rounded-xl { border-radius: var(--app-border-radius-xl) !important; }
-.rounded-pill { border-radius: var(--app-border-radius-pill) !important; }
+.text-light {
+  color: var(--ion-color-light) !important;
+}
 
-.shadow-sm { box-shadow: var(--app-box-shadow-sm) !important; }
-.shadow-md { box-shadow: var(--app-box-shadow-md) !important; }
-.shadow-lg { box-shadow: var(--app-box-shadow-lg) !important; }
-.no-shadow { box-shadow: none !important; }
+.text-dark {
+  color: var(--ion-color-dark) !important;
+}
 
-.fs-large { font-size: 1.25rem !important; }
-.fs-xlarge { font-size: 1.5rem !important; }
-.fs-xxlarge { font-size: 2rem !important; }
-.fs-small { font-size: 0.875rem !important; }
-.fs-xsmall { font-size: 0.70rem !important; }
-.fs-xxsmall { font-size: 0.625rem !important; }
-.fs-medium { font-size: 1rem !important; }
-.fw-small { font-size: 0.875rem !important; }
-.fw-bold { font-weight: 600 !important; }
-.fw-medium { font-weight: 500 !important; }
+.text-medium {
+  color: var(--ion-color-medium) !important;
+}
+
+.bg-primary {
+  background-color: var(--ion-color-primary) !important;
+}
+
+.bg-light {
+  background-color: var(--ion-color-light) !important;
+}
+
+.bg-card {
+  background-color: var(--ion-card-background) !important;
+}
+
+.bg-accordion {
+  background-color: var(--ion-accordion-background) !important;
+}
+
+.rounded-md {
+  border-radius: var(--app-border-radius-md) !important;
+}
+
+.rounded-lg {
+  border-radius: var(--app-border-radius-lg) !important;
+}
+
+.rounded-xl {
+  border-radius: var(--app-border-radius-xl) !important;
+}
+
+.rounded-pill {
+  border-radius: var(--app-border-radius-pill) !important;
+}
+
+.shadow-sm {
+  box-shadow: var(--app-box-shadow-sm) !important;
+}
+
+.shadow-md {
+  box-shadow: var(--app-box-shadow-md) !important;
+}
+
+.shadow-lg {
+  box-shadow: var(--app-box-shadow-lg) !important;
+}
+
+.no-shadow {
+  box-shadow: none !important;
+}
+
+.fs-large {
+  font-size: 1.25rem !important;
+}
+
+.fs-xlarge {
+  font-size: 1.5rem !important;
+}
+
+.fs-xxlarge {
+  font-size: 2rem !important;
+}
+
+.fs-small {
+  font-size: 0.875rem !important;
+}
+
+.fs-xsmall {
+  font-size: 0.70rem !important;
+}
+
+.fs-xxsmall {
+  font-size: 0.625rem !important;
+}
+
+.fs-medium {
+  font-size: 1rem !important;
+}
+
+.fw-small {
+  font-size: 0.875rem !important;
+}
+
+.fw-bold {
+  font-weight: 600 !important;
+}
+
+.fw-medium {
+  font-weight: 500 !important;
+}
 
 /* Layout e intestazioni */
 .page-header {
   position: relative;
   z-index: 1;
-  padding: var(--app-spacing-xl) 0 ;
+  padding: var(--app-spacing-xl) 0;
   margin-bottom: var(--app-spacing-md);
 }
 
@@ -442,17 +523,45 @@ ion-segment.custom-segment {
 }
 
 /* Utils per margini e spaziatura */
-.mb-0 { margin-bottom: 0 !important; }
-.mb-xs { margin-bottom: var(--app-spacing-xs) !important; }
-.mb-sm { margin-bottom: var(--app-spacing-sm) !important; }
-.mb-md { margin-bottom: var(--app-spacing-md) !important; }
-.mb-lg { margin-bottom: var(--app-spacing-lg) !important; }
+.mb-0 {
+  margin-bottom: 0 !important;
+}
 
-.mt-0 { margin-top: 0 !important; }
-.mt-xs { margin-top: var(--app-spacing-xs) !important; }
-.mt-sm { margin-top: var(--app-spacing-sm) !important; }
-.mt-md { margin-top: var(--app-spacing-md) !important; }
-.mt-lg { margin-top: var(--app-spacing-lg) !important; }
+.mb-xs {
+  margin-bottom: var(--app-spacing-xs) !important;
+}
+
+.mb-sm {
+  margin-bottom: var(--app-spacing-sm) !important;
+}
+
+.mb-md {
+  margin-bottom: var(--app-spacing-md) !important;
+}
+
+.mb-lg {
+  margin-bottom: var(--app-spacing-lg) !important;
+}
+
+.mt-0 {
+  margin-top: 0 !important;
+}
+
+.mt-xs {
+  margin-top: var(--app-spacing-xs) !important;
+}
+
+.mt-sm {
+  margin-top: var(--app-spacing-sm) !important;
+}
+
+.mt-md {
+  margin-top: var(--app-spacing-md) !important;
+}
+
+.mt-lg {
+  margin-top: var(--app-spacing-lg) !important;
+}
 
 /* FAB position */
 .fab-bottom-gap {
@@ -466,13 +575,33 @@ ion-segment.custom-segment {
 
 
 /* Utility classes per altezze comuni */
-.bg-height-full { height: 100vh !important; }
-.bg-height-half { height: 50vh !important; }
-.bg-height-quarter { height: 25vh !important; }
-.bg-height-200 { height: 200px !important; }
-.bg-height-300 { height: 300px !important; }
-.bg-height-400 { height: 400px !important; }
-.bg-height-500 { height: 500px !important; }
+.bg-height-full {
+  height: 100vh !important;
+}
+
+.bg-height-half {
+  height: 50vh !important;
+}
+
+.bg-height-quarter {
+  height: 25vh !important;
+}
+
+.bg-height-200 {
+  height: 200px !important;
+}
+
+.bg-height-300 {
+  height: 300px !important;
+}
+
+.bg-height-400 {
+  height: 400px !important;
+}
+
+.bg-height-500 {
+  height: 500px !important;
+}
 
 /* CIRCULAR PROGRESS */
 .circular-progress {
@@ -495,7 +624,7 @@ ion-segment.custom-segment {
 /* ANIMATED BUTTON */
 .animated-button {
   --border-radius: 16px;
-  --box-shadow: 
+  --box-shadow:
     0 8px 24px rgba(var(--ion-color-primary-rgb), 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
@@ -523,28 +652,29 @@ ion-segment.custom-segment {
 }
 
 
-  .week-chip-wrapper {
-    overflow: hidden;
-    transition: transform 0.2s;
-    flex-shrink: 0;
-  }
-  
-  .week-chip-wrapper:active {
-    transform: scale(1.1);
-  }
-  
-  .weeks-scroll-container {
-    display: flex;
-    overflow-x: auto;
-    white-space: nowrap;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    padding: 4px 0;
-  }
-  
-  .weeks-scroll-container::-webkit-scrollbar {
-    display: none;
-  }
+.week-chip-wrapper {
+  overflow: hidden;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.week-chip-wrapper:active {
+  transform: scale(1.1);
+}
+
+.weeks-scroll-container {
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 0;
+}
+
+.weeks-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
 /*   
   .workout-day-card {
     margin-bottom: var(--app-spacing-md);
@@ -552,34 +682,33 @@ ion-segment.custom-segment {
     overflow: hidden;
     box-shadow: var(--app-box-shadow-sm);
   } */
-  
-  .custom-accordion-header {
-    --padding-start: var(--app-spacing-md);
-    --padding-end: var(--app-spacing-md);
-    --padding-top: var(--app-spacing-md);
-    --padding-bottom: var(--app-spacing-md);
-    --border-radius: var(--app-border-radius-lg);
-    /* --background: var(--ion-card-background); */
-    /* --background: linear-gradient(
+
+.custom-accordion-header {
+  --padding-start: var(--app-spacing-md);
+  --padding-end: var(--app-spacing-md);
+  --padding-top: var(--app-spacing-md);
+  --padding-bottom: var(--app-spacing-md);
+  --border-radius: var(--app-border-radius-lg);
+  /* --background: var(--ion-card-background); */
+  /* --background: linear-gradient(
                   to bottom,
                   var(--ion-card-background) 80%,
                   transparent 100%
   ); */
-  }
-  
-  .exercise-item {
-    --padding-start: var(--app-spacing-md);
-    --padding-end: var(--app-spacing-md);
-    /* --border-color: rgba(var(--ion-border-color-rgb), 0.1); */
-  }
-  
-  /* Animazione per la freccia dell'accordion */
-  ion-accordion.accordion-expanding ion-item .accordion-arrow,
-  ion-accordion.accordion-expanded ion-item .accordion-arrow {
-    transform: rotate(180deg);
-  }
-  
-  ion-accordion ion-item .accordion-arrow {
-    transition: transform 0.3s ease;
-  }
-  
+}
+
+.exercise-item {
+  --padding-start: var(--app-spacing-md);
+  --padding-end: var(--app-spacing-md);
+  /* --border-color: rgba(var(--ion-border-color-rgb), 0.1); */
+}
+
+/* Animazione per la freccia dell'accordion */
+ion-accordion.accordion-expanding ion-item .accordion-arrow,
+ion-accordion.accordion-expanded ion-item .accordion-arrow {
+  transform: rotate(180deg);
+}
+
+ion-accordion ion-item .accordion-arrow {
+  transition: transform 0.3s ease;
+}

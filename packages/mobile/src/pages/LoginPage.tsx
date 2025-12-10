@@ -1,9 +1,9 @@
 // src/pages/LoginPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  IonContent, 
-  IonInput, 
-  IonButton, 
+import {
+  IonContent,
+  IonInput,
+  IonButton,
   IonText,
   IonCard,
   IonCardContent,
@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ROUTES from '@/routes';
 import '@/theme/LoginPage.css'; // Importa il CSS personalizzato
 import AnimatedBackground from '@/components/AnimatedBackground';
+import BilanciereLoader from '@/components/BilanciereLoader';
 import type { IonInputCustomEvent, InputChangeEventDetail } from '@ionic/core';
 
 const LoginPage: React.FC = () => {
@@ -34,6 +35,7 @@ const LoginPage: React.FC = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastColor, setToastColor] = useState('danger');
   const [showLoadingToast, setShowLoadingToast] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // ✅ Nuovo: stato per loading iniziale
   
   // Riferimenti ai campi input per accedere ai loro valori nativi
   const emailInputRef = useRef<any>(null);
@@ -45,7 +47,7 @@ const LoginPage: React.FC = () => {
   // Controlla se l'utente è già autenticato all'avvio
   useEffect(() => {
     const attemptAutoLogin = async () => {
-      setShowLoadingToast(true);
+      setIsCheckingAuth(true);
       try {
         const isValid = await checkAuth();
         if (isValid) {
@@ -54,7 +56,7 @@ const LoginPage: React.FC = () => {
       } catch (error) {
         console.error('Auto login error:', error);
       } finally {
-        setShowLoadingToast(false);
+        setIsCheckingAuth(false);
       }
     };
 
@@ -128,19 +130,31 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  // Componente per il messaggio di caricamento
-  const LoadingMessage: React.FC = () => (
-    <div style={{ 
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '8px',
-      width: '100%'
-    }}>
-      <IonSpinner name="crescent" style={{ width: '20px', height: '20px' }} />
-      <span>Accesso in corso...</span>
-    </div>
-  );
+  // ✅ Mostra schermata di caricamento durante verifica token iniziale
+  if (isCheckingAuth) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--ion-background-color)',
+        zIndex: 9999
+      }}>
+        <BilanciereLoader
+          show={true}
+          size="small"
+          speed={1.2}
+          message="Ipertrofia in corso..."
+          inline={false}
+        />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -154,7 +168,7 @@ const LoginPage: React.FC = () => {
           position="top"
           color={toastColor}
         />
-        
+
         {/* Toast per indicare il caricamento (in basso) */}
         <IonToast
           isOpen={showLoadingToast}
@@ -163,10 +177,8 @@ const LoginPage: React.FC = () => {
           message="Caricamento in corso..."
           duration={0} // Resta aperto finché non lo chiudiamo
           buttons={[]}
-        >
-          <LoadingMessage />
-        </IonToast>
-        
+        />
+
          <AnimatedBackground 
                     variant="linee-move" 
                     intensity="light"
@@ -180,14 +192,13 @@ const LoginPage: React.FC = () => {
           <IonRow className="ion-justify-content-center ion-align-items-center" style={{ minHeight: '100%' }}>
             <IonCol size="12" sizeMd="8" sizeLg="6" sizeXl="4">
               <div className="ion-text-center ion-padding-vertical ion-margin-bottom">
-                 <IonImg
+                <IonImg
                   src="./logo.png"
                   alt="Crew App Logo"
                   style={{ width: "200px", margin: "0 auto" }}
                 />
-
               </div>
-              
+
               <IonCard className="ion-no-margin">
                 <IonCardContent>
                   <IonHeader className="ion-text-center ion-margin-bottom">

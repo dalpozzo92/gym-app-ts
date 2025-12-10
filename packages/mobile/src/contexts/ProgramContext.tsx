@@ -6,6 +6,8 @@ type ProgramState = {
   activeProgram: Program | null;
   program_weeks: ProgramWeek[];
   activeWeek: number | null;
+  viewedWeek: number | null;
+  expandedDayIds: number[];
   isLoading: boolean;
   error: string | null;
 };
@@ -13,6 +15,8 @@ type ProgramState = {
 type ProgramContextValue = ProgramState & {
   refetchProgram: () => Promise<void>;
   setActiveWeek: (weekNumber: number) => void;
+  setViewedWeek: (weekNumber: number) => void;
+  setExpandedDayIds: (ids: number[]) => void;
 };
 
 const ProgramContext = createContext<ProgramContextValue | undefined>(undefined);
@@ -36,6 +40,8 @@ export const ProgramProvider: React.FC<ProgramProviderProps> = ({ children }) =>
     activeProgram: null,
     program_weeks: [],
     activeWeek: null,
+    viewedWeek: null,
+    expandedDayIds: [],
     isLoading: true,
     error: null
   });
@@ -49,6 +55,8 @@ export const ProgramProvider: React.FC<ProgramProviderProps> = ({ children }) =>
         activeProgram: null,
         program_weeks: [],
         activeWeek: null,
+        viewedWeek: null,
+        expandedDayIds: [],
         isLoading: false,
         error: null
       });
@@ -68,6 +76,8 @@ export const ProgramProvider: React.FC<ProgramProviderProps> = ({ children }) =>
           activeProgram: null,
           program_weeks: [],
           activeWeek: null,
+          viewedWeek: null,
+          expandedDayIds: [],
           isLoading: false,
           error: 'Nessun programma attivo trovato'
         });
@@ -85,13 +95,17 @@ export const ProgramProvider: React.FC<ProgramProviderProps> = ({ children }) =>
       const activeWeekData = weeks.find((w: any) => w.is_active);
       const activeWeekNumber = activeWeekData ? (activeWeekData as any).week_number : 1;
 
-      setState({
+      setState(prev => ({
         activeProgram: program,
         program_weeks: weeks,
         activeWeek: activeWeekNumber,
+        // ✅ Se viewedWeek è già impostato (id utente naviga avanti e indietro), manteniamolo. 
+        // Altrimenti (primo load), imposta a activeWeekNumber.
+        viewedWeek: prev.viewedWeek !== null ? prev.viewedWeek : activeWeekNumber,
+        expandedDayIds: prev.expandedDayIds,
         isLoading: false,
         error: null
-      });
+      }));
 
       console.log('✅ [ProgramContext] Settimana attiva:', activeWeekNumber);
     } catch (error: any) {
@@ -119,6 +133,20 @@ export const ProgramProvider: React.FC<ProgramProviderProps> = ({ children }) =>
   };
 
   // ============================================
+  // Imposta settimana VISUALIZZATA
+  // ============================================
+  const setViewedWeek = (weekNumber: number) => {
+    setState(prev => ({ ...prev, viewedWeek: weekNumber }));
+  };
+
+  // ============================================
+  // Imposta accordion espansi
+  // ============================================
+  const setExpandedDayIds = (ids: number[]) => {
+    setState(prev => ({ ...prev, expandedDayIds: ids }));
+  };
+
+  // ============================================
   // Effect: Carica dati quando utente loggato
   // ============================================
   useEffect(() => {
@@ -131,7 +159,9 @@ export const ProgramProvider: React.FC<ProgramProviderProps> = ({ children }) =>
   const value: ProgramContextValue = {
     ...state,
     refetchProgram,
-    setActiveWeek
+    setActiveWeek,
+    setViewedWeek,
+    setExpandedDayIds
   };
 
   return (

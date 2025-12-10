@@ -84,29 +84,29 @@ const HomePage: React.FC = () => {
       >
         {/* Sfondo animato */}
         <AnimatedBackground
-            variant="linee-move"
+          variant="linee-move"
           intensity="light"
           height="250px"
           position="fixed"
           speed={3}
           fadeInDuration={2000}
         />
-  {/* Sezione di saluto */}
-          <IonGrid className="page-header ion-padding-horizontal">
-            <IonRow>
-              <IonCol>
-                <IonText>
-                  <h1 className="fw-bold fs-xxlarge">
-                    Home                  </h1>
-                  <p className="text-medium">
-                    {dashboardData?.hasProgram
-                      ? 'Pronto a raggiungere i tuoi obiettivi?'
-                      : 'Inizia il tuo primo programma di allenamento!'}
-                  </p>
-                </IonText>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
+        {/* Sezione di saluto */}
+        <IonGrid className="page-header ion-padding-horizontal">
+          <IonRow>
+            <IonCol>
+              <IonText>
+                <h1 className="fw-bold fs-xxlarge">
+                  Home                  </h1>
+                <p className="text-medium">
+                  {dashboardData?.hasProgram
+                    ? 'Pronto a raggiungere i tuoi obiettivi?'
+                    : 'Inizia il tuo primo programma di allenamento!'}
+                </p>
+              </IonText>
+            </IonCol>
+          </IonRow>
+        </IonGrid>
 
         {/* Se non ha programmi attivi */}
         {!dashboardData?.hasProgram && (
@@ -146,267 +146,267 @@ const HomePage: React.FC = () => {
         {dashboardData?.hasProgram && stats && (
           <>
 
-        {/* Progresso Settimanale */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
-          <IonCard>
-            <IonCardContent>
-              <IonGrid className="ion-no-padding">
-                <IonRow className="ion-align-items-center">
-                  <IonCol size="auto">
-                    <CircularProgress
-                      percentage={stats.weekProgress * 100}
-                      size={60}
-                      strokeWidth={4}
-                      color="progressColor"
-                      text={`${Math.round(stats.weekProgress * 100)}%`}
-                      duration={2}
-                    />
-                  </IonCol>
-                  <IonCol>
-                    <IonText>
-                      <h2 className="fw-bold fs-large ion-no-margin">
-                        Progresso Settimanale
-                      </h2>
-                      <p className="ion-no-margin text-medium">
-                        {stats.completedDays} di {stats.totalDays} allenamenti completati
-                      </p>
-                    </IonText>
-                    {stats.activeWeek && (
-                      <IonBadge color="primary" className="ion-margin-top">
-                        <IonIcon icon={calendarOutline} style={{ marginRight: '4px' }} />
-                        Settimana {stats.activeWeek.week_number}
-                      </IonBadge>
-                    )}
-                  </IonCol>
-                </IonRow>
-              </IonGrid>
-            </IonCardContent>
-          </IonCard>
-        </motion.div>
+            {/* Progresso Settimanale */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <IonCard>
+                <IonCardContent>
+                  <IonGrid className="ion-no-padding">
+                    <IonRow className="ion-align-items-center">
+                      <IonCol size="auto">
+                        <CircularProgress
+                          percentage={stats.weekProgress * 100}
+                          size={60}
+                          strokeWidth={4}
+                          color="progressColor"
+                          text={`${Math.round(stats.weekProgress * 100)}%`}
+                          duration={2}
+                        />
+                      </IonCol>
+                      <IonCol>
+                        <IonText>
+                          <h1 className="fw-bold fs-large ion-padding-horizontal">
+                            Progresso Settimanale
+                          </h1>
+                          <p className="ion-no-margin text-medium ion-padding-horizontal">
+                            {stats.completedDays} di {stats.totalDays} allenamenti completati
+                          </p>
+                        </IonText>
+                        {stats.activeWeek && (
+                          <IonBadge color="primary" className="ion-margin-top ion-margin-horizontal">
+                            <IonIcon icon={calendarOutline} style={{ marginRight: '4px' }} />
+                            Settimana {stats.activeWeek.week_number}
+                          </IonBadge>
+                        )}
+                      </IonCol>
+                    </IonRow>
+                  </IonGrid>
+                </IonCardContent>
+              </IonCard>
+            </motion.div>
 
-        {/* Prossimo Allenamento */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <IonCard button onClick={goToWorkout}>
-            <IonCardContent>
-              <IonGrid className="ion-no-padding">
-                <IonRow className="ion-align-items-center">
-                  <IonCol size="auto">
-                    <IonIcon
-                      icon={fitnessOutline}
-                      color="primary"
-                      style={{
-                        fontSize: '2.5rem',
-                        padding: '12px',
-                        background: 'rgba(var(--ion-color-primary-rgb), 0.1)',
-                        borderRadius: '12px'
-                      }}
-                    />
-                  </IonCol>
-                  <IonCol>
+            {/* Prossimo Allenamento */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <IonCard button onClick={goToWorkout}>
+                <IonCardContent>
+                  <IonGrid className="ion-no-padding">
+                    <IonRow className="ion-align-items-center">
+                      <IonCol size="auto">
+                        <IonIcon
+                          icon={fitnessOutline}
+                          color="primary"
+                          style={{
+                            fontSize: '2.5rem',
+                            padding: '12px',
+                            background: 'rgba(var(--ion-color-primary-rgb), 0.1)',
+                            borderRadius: '12px'
+                          }}
+                        />
+                      </IonCol>
+                      <IonCol>
+                        <IonText>
+                          <h3 className="fw-bold fs-medium ion-no-margin">
+                            Prossimo Allenamento
+                          </h3>
+                          <p className="ion-no-margin text-medium ion-margin-top">
+                            {stats.nextWorkout}
+                          </p>
+                        </IonText>
+                      </IonCol>
+                      <IonCol size="auto">
+                        <IonIcon
+                          icon={chevronForwardOutline}
+                          color="medium"
+                          style={{ fontSize: '1.5rem' }}
+                        />
+                      </IonCol>
+                    </IonRow>
+                  </IonGrid>
+                </IonCardContent>
+              </IonCard>
+            </motion.div>
+
+            {/* Statistiche Veloci - Grid solo per layout 2x2 */}
+            <IonGrid className="ion-padding-horizontal">
+              <IonRow>
+                <IonCol size="6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                  >
+                    <IonCard>
+                      <IonCardContent className="ion-text-center">
+                        <IonIcon
+                          icon={checkmarkCircleOutline}
+                          color="secondary"
+                          style={{ fontSize: '2rem' }}
+                        />
+                        <IonText>
+                          <h2 className="fw-bold fs-large ion-margin-top ion-no-margin">
+                            {stats.totalWorkouts}
+                          </h2>
+                          <p className="ion-no-margin text-medium">
+                            Allenamenti completati
+                          </p>
+                        </IonText>
+                      </IonCardContent>
+                    </IonCard>
+                  </motion.div>
+                </IonCol>
+                <IonCol size="6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                  >
+                    <IonCard>
+                      <IonCardContent className="ion-text-center">
+                        <IonIcon
+                          icon={trophyOutline}
+                          color="warning"
+                          style={{ fontSize: '2rem' }}
+                        />
+                        <IonText>
+                          <h2 className="fw-bold fs-large ion-margin-top ion-no-margin">
+                            {stats.personalBests}
+                          </h2>
+                          <p className="ion-no-margin text-medium">
+                            Esercizi tracciati
+                          </p>
+                        </IonText>
+                      </IonCardContent>
+                    </IonCard>
+                  </motion.div>
+                </IonCol>
+              </IonRow>
+
+              <IonRow>
+                <IonCol size="6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                  >
+                    <IonCard>
+                      <IonCardContent className="ion-text-center">
+                        <IonIcon
+                          icon={calendarOutline}
+                          color="tertiary"
+                          style={{ fontSize: '2rem' }}
+                        />
+                        <IonText>
+                          <h2 className="fw-bold fs-large ion-margin-top ion-no-margin">
+                            {stats.completedDays}
+                          </h2>
+                          <p className="ion-no-margin text-medium">
+                            Giorni questa settimana
+                          </p>
+                        </IonText>
+                      </IonCardContent>
+                    </IonCard>
+                  </motion.div>
+                </IonCol>
+                <IonCol size="6">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                  >
+                    <IonCard>
+                      <IonCardContent className="ion-text-center">
+                        <IonIcon
+                          icon={timeOutline}
+                          color="success"
+                          style={{ fontSize: '2rem' }}
+                        />
+                        <IonText>
+                          <h2 className="fw-bold fs-large ion-margin-top ion-no-margin">
+                            {stats.lastWorkout}
+                          </h2>
+                          <p className="ion-no-margin text-medium">
+                            Ultimo allenamento
+                          </p>
+                        </IonText>
+                      </IonCardContent>
+                    </IonCard>
+                  </motion.div>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
+
+            {/* Attività Recente */}
+            {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+              >
+                <IonCard>
+                  <IonCardContent>
                     <IonText>
-                      <h3 className="fw-bold fs-medium ion-no-margin">
-                        Prossimo Allenamento
+                      <h3 className="fw-bold fs-medium ion-margin-bottom">
+                        Attività Recente
                       </h3>
-                      <p className="ion-no-margin text-medium ion-margin-top">
-                        {stats.nextWorkout}
-                      </p>
                     </IonText>
-                  </IonCol>
-                  <IonCol size="auto">
-                    <IonIcon
-                      icon={chevronForwardOutline}
-                      color="medium"
-                      style={{ fontSize: '1.5rem' }}
-                    />
-                  </IonCol>
-                </IonRow>
-              </IonGrid>
-            </IonCardContent>
-          </IonCard>
-        </motion.div>
-
-        {/* Statistiche Veloci - Grid solo per layout 2x2 */}
-        <IonGrid className="ion-padding-horizontal">
-          <IonRow>
-            <IonCol size="6">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-              >
-                <IonCard>
-                  <IonCardContent className="ion-text-center">
-                    <IonIcon
-                      icon={checkmarkCircleOutline}
-                      color="secondary"
-                      style={{ fontSize: '2rem' }}
-                    />
-                    <IonText>
-                      <h2 className="fw-bold fs-large ion-margin-top ion-no-margin">
-                        {stats.totalWorkouts}
-                      </h2>
-                      <p className="ion-no-margin text-medium">
-                        Allenamenti completati
-                      </p>
-                    </IonText>
+                    <IonList lines="none">
+                      {dashboardData.recentActivity.map((activity, index) => (
+                        <IonItem key={index}>
+                          <IonIcon
+                            icon={checkmarkCircleOutline}
+                            color="success"
+                            slot="start"
+                          />
+                          <IonLabel>
+                            <h3>Allenamento completato</h3>
+                            <p>{activity.day_name} - Settimana {activity.week_number}</p>
+                          </IonLabel>
+                          <IonBadge color="medium" slot="end">
+                            {getRelativeTime(activity.completed_at)}
+                          </IonBadge>
+                        </IonItem>
+                      ))}
+                    </IonList>
                   </IonCardContent>
                 </IonCard>
               </motion.div>
-            </IonCol>
-            <IonCol size="6">
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-              >
-                <IonCard>
-                  <IonCardContent className="ion-text-center">
-                    <IonIcon
-                      icon={trophyOutline}
-                      color="warning"
-                      style={{ fontSize: '2rem' }}
-                    />
-                    <IonText>
-                      <h2 className="fw-bold fs-large ion-margin-top ion-no-margin">
-                        {stats.personalBests}
-                      </h2>
-                      <p className="ion-no-margin text-medium">
-                        Esercizi tracciati
-                      </p>
-                    </IonText>
-                  </IonCardContent>
-                </IonCard>
-              </motion.div>
-            </IonCol>
-          </IonRow>
+            )}
 
-          <IonRow>
-            <IonCol size="6">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-              >
-                <IonCard>
-                  <IonCardContent className="ion-text-center">
-                    <IonIcon
-                      icon={calendarOutline}
-                      color="tertiary"
-                      style={{ fontSize: '2rem' }}
-                    />
-                    <IonText>
-                      <h2 className="fw-bold fs-large ion-margin-top ion-no-margin">
-                        {stats.completedDays}
-                      </h2>
-                      <p className="ion-no-margin text-medium">
-                        Giorni questa settimana
-                      </p>
-                    </IonText>
-                  </IonCardContent>
-                </IonCard>
-              </motion.div>
-            </IonCol>
-            <IonCol size="6">
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-              >
-                <IonCard>
-                  <IonCardContent className="ion-text-center">
-                    <IonIcon
-                      icon={timeOutline}
-                      color="success"
-                      style={{ fontSize: '2rem' }}
-                    />
-                    <IonText>
-                      <h2 className="fw-bold fs-large ion-margin-top ion-no-margin">
-                        {stats.lastWorkout}
-                      </h2>
-                      <p className="ion-no-margin text-medium">
-                        Ultimo allenamento
-                      </p>
-                    </IonText>
-                  </IonCardContent>
-                </IonCard>
-              </motion.div>
-            </IonCol>
-          </IonRow>
-        </IonGrid>
-
-        {/* Attività Recente */}
-        {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-          >
-            <IonCard>
-              <IonCardContent>
-                <IonText>
-                  <h3 className="fw-bold fs-medium ion-margin-bottom">
-                    Attività Recente
-                  </h3>
-                </IonText>
-                <IonList lines="none">
-                  {dashboardData.recentActivity.map((activity, index) => (
-                    <IonItem key={index}>
-                      <IonIcon
-                        icon={checkmarkCircleOutline}
-                        color="success"
-                        slot="start"
-                      />
-                      <IonLabel>
-                        <h3>Allenamento completato</h3>
-                        <p>{activity.day_name} - Settimana {activity.week_number}</p>
-                      </IonLabel>
-                      <IonBadge color="medium" slot="end">
-                        {getRelativeTime(activity.completed_at)}
-                      </IonBadge>
-                    </IonItem>
-                  ))}
-                </IonList>
-              </IonCardContent>
-            </IonCard>
-          </motion.div>
-        )}
-
-        {/* Quick Actions */}
-        <IonGrid className="ion-padding">
-          <IonRow>
-            <IonCol size="6">
-              <IonButton
-                expand="block"
-                fill="outline"
-                color="primary"
-                onClick={() => history.push(ROUTES.PUBLIC.WORKOUT_LIST)}
-              >
-                <IonIcon icon={fitnessOutline} slot="start" />
-                Programmi
-              </IonButton>
-            </IonCol>
-            <IonCol size="6">
-              <IonButton
-                expand="block"
-                fill="outline"
-                color="secondary"
-                onClick={() => history.push(ROUTES.PUBLIC.SETTING)}
-              >
-                <IonIcon icon={statsChartOutline} slot="start" />
-                Statistiche
-              </IonButton>
-            </IonCol>
-          </IonRow>
-        </IonGrid>
-        </>
+            {/* Quick Actions */}
+            <IonGrid className="ion-padding">
+              <IonRow>
+                <IonCol size="6">
+                  <IonButton
+                    expand="block"
+                    fill="outline"
+                    color="primary"
+                    onClick={() => history.push(ROUTES.PUBLIC.WORKOUT_LIST)}
+                  >
+                    <IonIcon icon={fitnessOutline} slot="start" />
+                    Programmi
+                  </IonButton>
+                </IonCol>
+                <IonCol size="6">
+                  <IonButton
+                    expand="block"
+                    fill="outline"
+                    color="secondary"
+                    onClick={() => history.push(ROUTES.PUBLIC.SETTING)}
+                  >
+                    <IonIcon icon={statsChartOutline} slot="start" />
+                    Statistiche
+                  </IonButton>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
+          </>
         )}
       </ContentWithMotion>
     </>

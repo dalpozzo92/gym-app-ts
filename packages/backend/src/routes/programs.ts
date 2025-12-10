@@ -65,23 +65,34 @@ export default async function programsRoutes(fastify: FastifyInstance) {
       }
 
       const program_weeks = await sql`
-        SELECT 
+        SELECT
           program_weeks.id_program_week,
           program_weeks.week_number,
           program_weeks.is_active,
           program_weeks.is_deleted,
           COALESCE(
-            (SELECT ROUND(AVG(
-              CASE 
-                WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1.0
-                ELSE 0.0
-              END
-            ), 2)
-            FROM program_days 
-            INNER JOIN workout_day_exercises ON program_days.id_program_day = workout_day_exercises.id_program_day
-            LEFT JOIN workout_exercise_set ON workout_day_exercises.id_workout_day_exercise = workout_exercise_set.id_workout_day_exercises
-            WHERE program_days.id_program_week = program_weeks.id_program_week), 
-            0
+            LEAST(100, GREATEST(0, ROUND(
+              (
+                -- Conta i set completati (actual_load > 0 AND actual_reps > 0)
+                SELECT COUNT(*)
+                FROM workout_exercise_set wes
+                INNER JOIN workout_day_exercises wde ON wes.id_workout_day_exercises = wde.id_workout_day_exercise
+                INNER JOIN program_days pd ON wde.id_program_day = pd.id_program_day
+                WHERE pd.id_program_week = program_weeks.id_program_week
+                  AND wde.is_deleted = 0
+                  AND wes.actual_load > 0
+                  AND wes.actual_reps > 0
+              ) * 100.0 / NULLIF(
+                (
+                  -- Somma i set prescritti totali
+                  SELECT SUM(wde2.sets)
+                  FROM workout_day_exercises wde2
+                  INNER JOIN program_days pd2 ON wde2.id_program_day = pd2.id_program_day
+                  WHERE pd2.id_program_week = program_weeks.id_program_week
+                    AND wde2.is_deleted = 0
+                ), 0
+              ), 0
+            )::integer)), 0
           ) as progress
         FROM program_weeks
         WHERE program_weeks.id_program = ${programId}
@@ -131,21 +142,31 @@ export default async function programsRoutes(fastify: FastifyInstance) {
             0
           ) as exercise_count,
           COALESCE(
-            (SELECT SUM(workout_day_exercises.sets * (workout_day_exercises.rest_time / 60.0) + 3) 
+            (SELECT SUM(workout_day_exercises.sets * 2 + 3) 
              FROM workout_day_exercises 
              WHERE workout_day_exercises.id_program_day = program_days.id_program_day), 
             45
           ) as estimated_duration,
           COALESCE(
-            (SELECT ROUND(AVG(
-              CASE 
-                WHEN workout_exercise_set.actual_load > 0 AND workout_exercise_set.actual_reps > 0 THEN 1.0
-                ELSE 0.0
-              END
-            ), 2)
-            FROM workout_day_exercises
-            LEFT JOIN workout_exercise_set ON workout_day_exercises.id_workout_day_exercise = workout_exercise_set.id_workout_day_exercises
-            WHERE workout_day_exercises.id_program_day = program_days.id_program_day), 
+            LEAST(100, GREATEST(0, (SELECT ROUND(
+              (
+                (SELECT COUNT(*)::decimal
+                 FROM workout_exercise_set wes
+                 INNER JOIN workout_day_exercises wde ON wes.id_workout_day_exercises = wde.id_workout_day_exercise
+                 WHERE wde.id_program_day = program_days.id_program_day
+                   AND wde.is_deleted = 0
+                   AND wes.actual_load > 0
+                   AND wes.actual_reps > 0)
+                * 100.0
+              ) /
+              NULLIF(
+                (SELECT SUM(sets)
+                 FROM workout_day_exercises
+                 WHERE id_program_day = program_days.id_program_day
+                   AND is_deleted = 0),
+                0
+              ), 0
+            )::integer))),
             0
           ) as progress
         FROM program_days

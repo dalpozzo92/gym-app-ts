@@ -10,7 +10,44 @@ import type { ExerciseCache } from '@/db/dexie';
 
 /**
  * 🔄 SYNC WORKER - Sincronizza pending operations con il backend ogni 3 secondi
+ *
+ * ✅ FASE 1 & 2 MIGLIORAMENTI:
+ * - Mutex per evitare sync paralleli (un solo sync alla volta)
+ * - Merge intelligente delle pending ops (solo l'ultimo valore per campo)
  */
+
+// ✅ MUTEX: Garantisce che un solo sync possa essere eseguito alla volta
+let syncMutex = false;
+let pendingFlushScheduled = false;
+
+/**
+ * 🧠 MERGE INTELLIGENTE: Consolida pending ops mantenendo solo l'ultimo valore per campo
+ * Riduce il numero di operazioni da sincronizzare eliminando valori intermedi obsoleti
+ */
+const consolidatePendingOps = (ops: PendingOp[]): PendingOp[] => {
+  if (ops.length === 0) return [];
+
+  // Mappa: `${exerciseId}-${setId}-${field}` → ultima PendingOp
+  const consolidated = new Map<string, PendingOp>();
+
+  for (const op of ops) {
+    const key = `${op.exerciseId}-${op.setId}-${op.field}`;
+    const existing = consolidated.get(key);
+
+    // Mantieni solo l'operazione con timestamp più recente
+    if (!existing || op.timestamp > existing.timestamp) {
+      consolidated.set(key, op);
+    }
+  }
+
+  const result = Array.from(consolidated.values());
+
+  if (result.length < ops.length) {
+    console.log(`🧹 [SyncWorker] Consolidate ${ops.length} ops → ${result.length} ops (risparmiate ${ops.length - result.length})`);
+  }
+
+  return result;
+};
 
 const sendPendingOps = async (ops: PendingOp[]): Promise<boolean> => {
   if (ops.length === 0) {
@@ -20,8 +57,11 @@ const sendPendingOps = async (ops: PendingOp[]): Promise<boolean> => {
 
   console.log('🔍 [SyncWorker] Pending operations da sincronizzare:', ops);
 
+  // ✅ FASE 2: Merge intelligente - consolida pending ops prima del sync
+  const consolidatedOps = consolidatePendingOps(ops);
+
   // Raggruppa per exerciseId + setId (passa SOLO i campi modificabili dall'utente)
-  const groupedBySet = ops.reduce((acc: any, op: PendingOp) => {
+  const groupedBySet = consolidatedOps.reduce((acc: any, op: PendingOp) => {
     const key = `${op.exerciseId}-${op.setId}`;
 
     if (!acc[key]) {
@@ -45,13 +85,14 @@ const sendPendingOps = async (ops: PendingOp[]): Promise<boolean> => {
     const response = await syncWorkoutExerciseSets(payload as any);
     console.log('✅ [SyncWorker] Risposta dal server:', response);
 
-    // ✅ Sync completato: cancella SOLO le pending ops che abbiamo sincronizzato
+    // ✅ Sync completato: cancella TUTTE le pending ops originali (anche quelle consolidate)
+    // Questo è importante: se avevamo 10 ops consolidate in 3, cancelliamo tutte le 10 originali
     const idsToDelete = ops.map(op => op.id);
     await deletePendingOpsByIds(idsToDelete);
     console.log('🧹 [SyncWorker] Pending operations sincronizzate cancellate:', idsToDelete.length);
 
     // ✅ Aggiorna cache locale con dati freschi dal server
-    const uniqueExerciseIds = Array.from(new Set(ops.map(op => op.exerciseId)));
+    const uniqueExerciseIds = Array.from(new Set(consolidatedOps.map(op => op.exerciseId)));
 
     for (const exerciseId of uniqueExerciseIds) {
       try {
@@ -109,6 +150,7 @@ const sendPendingOps = async (ops: PendingOp[]): Promise<boolean> => {
 
 /**
  * Hook che avvia il sync worker automatico (ogni 3 secondi)
+ * ✅ FASE 1: Con mutex per evitare sync paralleli
  */
 export const useSyncWorker = () => {
   const timerRef = useRef<number | null>(null);
@@ -121,8 +163,31 @@ export const useSyncWorker = () => {
         return;
       }
 
-      const pending = await getAllPendingOps();
-      await sendPendingOps(pending);
+      // ✅ FASE 1: Controlla mutex - se un sync è già in corso, salta e segna per retry
+      if (syncMutex) {
+        console.log('⏭️ [SyncWorker] Sync già in corso, salto questo tick');
+        pendingFlushScheduled = true; // Segna che dobbiamo riprovare
+        return;
+      }
+
+      // ✅ FASE 1: Acquisisci mutex
+      syncMutex = true;
+      pendingFlushScheduled = false;
+
+      try {
+        const pending = await getAllPendingOps();
+        await sendPendingOps(pending);
+      } finally {
+        // ✅ FASE 1: Rilascia mutex
+        syncMutex = false;
+
+        // Se durante il sync è arrivata un'altra richiesta, esegui subito un altro sync
+        if (pendingFlushScheduled) {
+          console.log('🔄 [SyncWorker] Sync pendente rilevato, eseguo subito');
+          pendingFlushScheduled = false;
+          setTimeout(() => tick(), 100); // Piccolo delay per evitare loop stretto
+        }
+      }
     };
 
     // Esegui subito il primo tick
@@ -141,6 +206,7 @@ export const useSyncWorker = () => {
 
 /**
  * Flush manuale delle pending ops (usato per uscita pagina)
+ * ✅ FASE 1: Con mutex per evitare conflitti con sync automatico
  */
 export const flushPendingOpsNow = async (): Promise<boolean> => {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -148,14 +214,34 @@ export const flushPendingOpsNow = async (): Promise<boolean> => {
     return false;
   }
 
-  const pending = await getAllPendingOps();
-
-  if (pending.length === 0) {
-    console.log('✅ [SyncWorker] Nessuna pending operation da flushare');
-    return true;
+  // ✅ FASE 1: Se un sync è già in corso, aspetta che finisca (max 5 secondi)
+  let retries = 0;
+  while (syncMutex && retries < 50) {
+    console.log('⏳ [SyncWorker] Flush in attesa che sync corrente finisca...');
+    await new Promise(resolve => setTimeout(resolve, 100));
+    retries++;
   }
 
-  console.log('🔄 [SyncWorker] Flush manuale in corso...', pending);
+  if (syncMutex) {
+    console.warn('⚠️ [SyncWorker] Timeout in attesa mutex, forzo flush');
+  }
 
-  return await sendPendingOps(pending);
+  // ✅ FASE 1: Acquisisci mutex
+  syncMutex = true;
+
+  try {
+    const pending = await getAllPendingOps();
+
+    if (pending.length === 0) {
+      console.log('✅ [SyncWorker] Nessuna pending operation da flushare');
+      return true;
+    }
+
+    console.log('🔄 [SyncWorker] Flush manuale in corso...', pending);
+
+    return await sendPendingOps(pending);
+  } finally {
+    // ✅ FASE 1: Rilascia mutex
+    syncMutex = false;
+  }
 };

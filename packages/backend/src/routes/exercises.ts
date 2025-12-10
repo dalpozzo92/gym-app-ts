@@ -68,11 +68,11 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
             }
 
             const sets = await sql`
-        SELECT 
+        SELECT
           workout_exercise_set.id_workout_exercise_set,
           workout_exercise_set.set_number,
-          workout_exercise_set.load,
-          workout_exercise_set.reps,
+          workout_exercise_set.actual_load as load,
+          workout_exercise_set.actual_reps as reps,
           workout_exercise_set.intensity,
           workout_exercise_set.rpe,
           workout_exercise_set.execution_rating,
@@ -193,8 +193,8 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
         INSERT INTO workout_exercise_set (
           id_workout_day_exercises,
           set_number,
-          load,
-          reps,
+          actual_load,
+          actual_reps,
           intensity,
           rpe,
           execution_rating,
@@ -216,8 +216,8 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
         )
         ON CONFLICT (id_workout_day_exercises, set_number)
         DO UPDATE SET
-          load = EXCLUDED.load,
-          reps = EXCLUDED.reps,
+          actual_load = EXCLUDED.actual_load,
+          actual_reps = EXCLUDED.actual_reps,
           intensity = EXCLUDED.intensity,
           rpe = EXCLUDED.rpe,
           execution_rating = EXCLUDED.execution_rating,
@@ -271,8 +271,8 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
           INSERT INTO workout_exercise_set (
             id_workout_day_exercises,
             set_number,
-            load,
-            reps,
+            actual_load,
+            actual_reps,
             intensity,
             rpe,
             execution_rating,
@@ -294,8 +294,8 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
           )
           ON CONFLICT (id_workout_day_exercises, set_number)
           DO UPDATE SET
-            load = EXCLUDED.load,
-            reps = EXCLUDED.reps,
+            actual_load = EXCLUDED.actual_load,
+            actual_reps = EXCLUDED.actual_reps,
             intensity = EXCLUDED.intensity,
             rpe = EXCLUDED.rpe,
             execution_rating = EXCLUDED.execution_rating,
@@ -344,8 +344,8 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
         SELECT COUNT(*) as completed
         FROM workout_exercise_set
         WHERE workout_exercise_set.id_workout_day_exercises = ${workoutDayExerciseId}
-          AND workout_exercise_set.load > 0
-          AND workout_exercise_set.reps > 0
+          AND workout_exercise_set.actual_load > 0
+          AND workout_exercise_set.actual_reps > 0
       `;
 
             const completed = parseInt(completedSets[0].completed);
@@ -392,9 +392,9 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
             }
 
             const previousPerformance = await sql`
-        SELECT 
-          workout_exercise_set.load,
-          workout_exercise_set.reps,
+        SELECT
+          workout_exercise_set.actual_load as load,
+          workout_exercise_set.actual_reps as reps,
           workout_exercise_set.rpe,
           workout_exercise_set.execution_rating,
           workout_exercise_set.created_at
@@ -406,8 +406,8 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
           AND program_weeks.week_number = ${previousWeek}
           AND workout_day_exercises.id_exercise_list = ${exerciseListId}
           AND workout_exercise_set.set_number = ${setNumber}
-          AND workout_exercise_set.load > 0
-          AND workout_exercise_set.reps > 0
+          AND workout_exercise_set.actual_load > 0
+          AND workout_exercise_set.actual_reps > 0
         ORDER BY workout_exercise_set.created_at DESC
         LIMIT 1
       `;
@@ -450,10 +450,10 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
             const exerciseListId = currentExercise[0].id_exercise_list;
 
             const history = await sql`
-        SELECT 
+        SELECT
           workout_exercise_set.set_number,
-          workout_exercise_set.load,
-          workout_exercise_set.reps,
+          workout_exercise_set.actual_load as load,
+          workout_exercise_set.actual_reps as reps,
           workout_exercise_set.rpe,
           workout_exercise_set.execution_rating,
           workout_exercise_set.created_at,
@@ -467,8 +467,8 @@ export default async function exercisesRoutes(fastify: FastifyInstance) {
         INNER JOIN program ON program_weeks.id_program = program.id_program
         WHERE workout_day_exercises.id_exercise_list = ${exerciseListId}
           AND (program.id_user_details = ${userId} OR program.assigned_to = ${userId})
-          AND workout_exercise_set.load > 0
-          AND workout_exercise_set.reps > 0
+          AND workout_exercise_set.actual_load > 0
+          AND workout_exercise_set.actual_reps > 0
         ORDER BY workout_exercise_set.created_at DESC
         LIMIT 50
       `;
