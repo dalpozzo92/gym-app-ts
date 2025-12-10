@@ -94,13 +94,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // ✅ Salva user data in Dexie per uso offline
     if (user) {
+      // ⚠️ IMPORTANTISSIMO: Recupera token esistenti PRIMA di salvare
+      // Su Mobile PWA non usiamo solo cookie, ma anche Bearer Token salvato.
+      // Se sovrascriviamo con null, rompiamo l'auth su iOS/Android.
+      const existingTokens = await getAuthTokens();
+
       await saveAuthTokens({
-        accessToken: null, // I token sono HTTP-only cookie
-        refreshToken: null,
-        expiresAt: null,
+        accessToken: existingTokens?.accessToken || null,
+        refreshToken: existingTokens?.refreshToken || null,
+        expiresAt: existingTokens?.expiresAt || null,
         userId: String(user.id_user_details || '')
       });
-      console.log('✅ [AuthContext] User data salvati in Dexie per uso offline');
+      console.log('✅ [AuthContext] User data salvati in Dexie (token preservati)');
     } else {
       await clearAuthTokens();
     }
