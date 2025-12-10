@@ -490,12 +490,7 @@ const ProgramWeeks: React.FC = () => {
   const isLoading = isProgramLoading || viewedWeek === null;
   const error = programError || daysError || weekExercisesError;
 
-  // ✅ Calcola progress della settimana
-  const weekProgress = useMemo(() => {
-    if (!visibleProgramDays || visibleProgramDays.length === 0) return 0;
-    const totalProgress = visibleProgramDays.reduce((sum: number, day: any) => sum + (day.progress || 0), 0);
-    return totalProgress / visibleProgramDays.length;
-  }, [visibleProgramDays]);
+
 
   const handleRefresh = useCallback(async (event?: CustomEvent) => {
     try {
@@ -603,7 +598,7 @@ const ProgramWeeks: React.FC = () => {
   const handleCompleteWeekClick = useCallback(() => {
     // Usa il progress della settimana selezionata (calcolato dal backend in getProgramWeeks)
     const currentWeekData = program_weeks.find((w: any) => w.week_number === viewedWeek);
-    const currentProgress = currentWeekData?.progress || 0;
+    const currentProgress = Number(currentWeekData?.progress || 0);
 
     if (currentProgress < 100) {
       // Settimana non completata - mostra modal di conferma
