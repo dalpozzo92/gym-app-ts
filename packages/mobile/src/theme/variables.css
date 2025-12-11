@@ -108,11 +108,11 @@
   /* Applicazione della spaziatura ai componenti Ionic */
   --ion-padding: var(--app-spacing-md);
   --ion-margin: var(--app-spacing-md);
-  --ion-safe-margin-bottom: env(safe-area-inset-bottom);
+  /* --ion-safe-margin-bottom: env(safe-area-inset-bottom); */
 
   /* Safe area insets per iOS notch */
   --safe-area-top: env(safe-area-inset-top);
-  --safe-area-bottom: env(safe-area-inset-bottom);
+  /* --safe-area-bottom: env(safe-area-inset-bottom); */
   --safe-area-left: env(safe-area-inset-left);
   --safe-area-right: env(safe-area-inset-right);
 
@@ -192,9 +192,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-.safe-area-content {
+/* .safe-area-content {
   --padding-bottom: var(--ion-safe-margin-bottom, 16px);
-}
+} */
 
 /* Nascondi scrollbar globalmente */
 ::-webkit-scrollbar {
