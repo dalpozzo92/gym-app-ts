@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonIcon, IonProgressBar } from '@ionic/react';
-import { chevronDownOutline, chevronUpOutline, stopOutline } from 'ionicons/icons';
+import { chevronDownOutline, stopOutline } from 'ionicons/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTimer } from '@/contexts/TimerContext';
 
