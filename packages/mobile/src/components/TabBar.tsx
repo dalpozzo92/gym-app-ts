@@ -51,10 +51,10 @@ const TabBar: React.FC = () => {
   const styles: Record<string, any> = {
     footer: {
       '--background': 'transparent',
-      marginBottom: 'max(8px, env(safe-area-inset-bottom))',
+      // marginBottom: 'max(8px, env(safe-area-inset-bottom))',
     },
     container: {
-      padding: '10px 16px',
+      padding: '10px 10px',
       background: 'transparent'
     },
     tabBar: {
