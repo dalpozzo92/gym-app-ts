@@ -62,6 +62,7 @@ import { useWorkoutDayExercises } from '@/hooks/useWorkout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgramActive } from '@/hooks/useProgram';
+import { useTimer } from '@/contexts/TimerContext';
 
 import { useAutosaveSets } from '@/hooks/useAutosaveSets';
 import { useSyncWorker, flushPendingOpsNow } from '@/hooks/useSyncWorker';
@@ -214,177 +215,104 @@ const ExerciseChip = ({ workout_day_exercise, isSelected, onClick, progress: ini
   );
 };
 
-const RestTimer = ({ seconds, timerId, activeTimerId, setActiveTimerId }) => {
-  const [timeLeft, setTimeLeft] = useState(seconds);
-  const [isRunning, setIsRunning] = useState(false);
-  const timerRef = useRef(null);
+const RestTimer = ({ seconds, timerId }) => {
+  const { getTimerState, startTimer, activeTimer } = useTimer();
+  const timerState = getTimerState(timerId);
 
-  // ✅ Auto-stop se altro timer diventa attivo
-  useEffect(() => {
-    if (activeTimerId !== timerId && isRunning) {
-      setIsRunning(false);
-      setTimeLeft(seconds);
-    }
-  }, [activeTimerId, timerId, isRunning, seconds]);
-
-  // ✅ Gestione countdown
-  useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsRunning(false);
-            setActiveTimerId(null);
-            // ✅ Vibrazione al termine (opzionale)
-            if ('vibrate' in navigator) {
-              navigator.vibrate([200, 100, 200]);
-            }
-            return seconds;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isRunning, timeLeft, seconds, setActiveTimerId]);
+  const isRunning = timerState?.isRunning ?? false;
+  const isThisTimerActive = activeTimer?.timerId === timerId;
+  const isAnyTimerActive = activeTimer !== null;
 
   const handleStart = () => {
-    setActiveTimerId(timerId); // ✅ Setta questo come unico attivo
-    setTimeLeft(seconds);
-    setIsRunning(true);
+    // ✅ Impedisci di avviare se un altro timer è già attivo
+    if (isAnyTimerActive && !isThisTimerActive) return;
+    startTimer(timerId, seconds);
   };
 
-  const handlePause = () => {
-    setIsRunning(false);
-  };
-
-  const handleReset = () => {
-    setIsRunning(false);
-    setTimeLeft(seconds);
-    setActiveTimerId(null);
-  };
-
-  const formatTime = (secs) => {
+  const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const remainingSecs = secs % 60;
     return `${mins}:${remainingSecs.toString().padStart(2, '0')}`;
   };
 
-  const progress = (seconds - timeLeft) / seconds;
-
   return (
-    <div>
-      <IonCard
-      // style={{
-      //   margin: '12px 16px',
-      //   borderRadius: '16px',
-      //   background: 'rgba(var(--ion-card-background-rgb), 0.3)',
-      //   backdropFilter: 'blur(10px)',
-      //   overflow: 'visible'
-      // }}
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      margin: '4px 0'
+    }}>
+      <motion.button
+        onClick={handleStart}
+        whileTap={isAnyTimerActive && !isThisTimerActive ? {} : { scale: 0.95 }}
+        disabled={isAnyTimerActive && isThisTimerActive}
+        style={{
+          width: '50px',
+          height: '50px',
+          borderRadius: '50%',
+          background: isThisTimerActive
+            ? 'linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade))'
+            : isAnyTimerActive
+            ? 'rgba(var(--ion-color-medium-rgb), 0.05)'
+            : 'rgba(var(--ion-color-primary-rgb), 0.1)',
+          border: isThisTimerActive
+            ? 'none'
+            : isAnyTimerActive
+            ? '2px solid rgba(var(--ion-color-medium-rgb), 0.2)'
+            : '2px solid rgba(var(--ion-color-primary-rgb), 0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: isAnyTimerActive && !isThisTimerActive ? 'not-allowed' : 'pointer',
+          boxShadow: isThisTimerActive
+            ? '0 8px 24px rgba(var(--ion-color-primary-rgb), 0.4)'
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+          transition: 'all 0.3s ease',
+          opacity: isAnyTimerActive && !isThisTimerActive ? 0.3 : 1,
+          pointerEvents: isAnyTimerActive && !isThisTimerActive ? 'none' : 'auto'
+        }}
       >
-        <IonCardContent style={{ padding: '12px 16px' }}>
-          <IonGrid className="ion-no-padding">
-            <IonRow className="ion-align-items-center">
-              {/* ✅ Tempo (sinistra) */}
-              <IonCol size="auto" style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                minWidth: '70px'
-              }}>
-                <IonIcon
-                  icon={timerOutline}
-                  style={{
-                    fontSize: '20px',
-                    color: isRunning
-                      ? 'var(--ion-color-primary)'
-                      : 'var(--ion-color-medium)'
-                  }}
-                />
-                <IonText style={{
-                  fontWeight: '700',
-                  fontSize: '1rem',
-                  color: isRunning
-                    ? 'var(--ion-color-primary)'
-                    : 'var(--ion-text-color)'
-                }}>
-                  {formatTime(timeLeft)}
-                </IonText>
-              </IonCol>
-
-              {/* ✅ Barra progresso (centro) */}
-              <IonCol className='ion-padding-horizontal'>
-                <IonProgressBar
-                  value={progress}
-                  background={isRunning ? 'primary' : 'medium'}
-                  color={isRunning ? 'primary' : 'medium'}
-                  style={{
-                    height: '3px',
-                    borderRadius: '3px'
-                  }}
-                />
-              </IonCol>
-
-              {/* ✅ Controlli (destra) */}
-              <IonCol size="auto">
-                {!isRunning ? (
-                  <IonButton
-                    fill="clear"
-                    size="small"
-                    onClick={handleStart}
-                    style={{
-                      '--padding-start': '8px',
-                      '--padding-end': '8px',
-                      margin: 0,
-                      height: '36px',
-                      minWidth: '36px'
-                    }}
-                  >
-                    <IonIcon icon={playOutline} style={{ fontSize: '20px' }} />
-                  </IonButton>
-                ) : (
-                  <>
-                    {/* <IonButton
-                      fill="clear"
-                      size="small"
-                      onClick={handlePause}
-                      style={{
-                        '--padding-start': '6px',
-                        '--padding-end': '6px',
-                        margin: 0,
-                        height: '36px',
-                        minWidth: '36px'
-                      }}
-                    >
-                      <IonIcon icon={pauseOutline} style={{ fontSize: '20px' }} />
-                    </IonButton> */}
-                    <IonButton
-                      fill="clear"
-                      size="small"
-                      onClick={handleReset}
-                      style={{
-                        '--padding-start': '6px',
-                        '--padding-end': '6px',
-                        margin: 0,
-                        height: '36px',
-                        minWidth: '36px'
-                      }}
-                    >
-                      <IonIcon icon={stopOutline} style={{ fontSize: '20px' }} />
-                    </IonButton>
-                  </>
-                )}
-              </IonCol>
-            </IonRow>
-          </IonGrid>
-        </IonCardContent>
-      </IonCard>
+        {isThisTimerActive ? (
+          <>
+            <IonIcon
+              icon={timerOutline}
+              style={{
+                fontSize: '12px',
+                color: 'white',
+                marginBottom: '4px'
+              }}
+            />
+            <span style={{
+              fontSize: '0.5rem',
+              color: 'white',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Attivo
+            </span>
+          </>
+        ) : (
+          <>
+            <IonIcon
+              icon={playOutline}
+              style={{
+                fontSize: '16px',
+                color: isAnyTimerActive ? 'var(--ion-color-medium)' : 'var(--ion-color-primary)'
+              }}
+            />
+            <span style={{
+              fontSize: '0.5rem',
+              color: isAnyTimerActive ? 'var(--ion-color-medium)' : 'var(--ion-color-primary)',
+              fontWeight: '600',
+              marginTop: '4px'
+            }}>
+              {formatTime(seconds)}
+            </span>
+          </>
+        )}
+      </motion.button>
     </div>
   );
 };
@@ -518,8 +446,6 @@ const SerieCard = ({
   restTime,
   repsMin,
   repsMax,
-  activeTimerId,        // ✅ NUOVO
-  setActiveTimerId,     // ✅ NUOVO
   saveStatus            // ✅ NUOVO: stato di salvataggio
 }) => {
   // ✅ Stato locale - inizializzato UNA VOLTA al mount, poi indipendente
@@ -535,12 +461,14 @@ const SerieCard = ({
     if (isCompleted) {
       return {
         icon: checkmarkCircleOutline,
+        text: 'Completato',
         color: 'var(--ion-color-success)',
         label: 'Completato'
       };
     }
     return {
       icon: alertCircleOutline,
+      text: 'Da completatare',
       color: 'var(--ion-color-warning)',
       label: 'Incompleto'
     };
@@ -551,35 +479,35 @@ const SerieCard = ({
     const statusConfig = {
       'Salvato': {
         icon: cloudDoneOutline,
-        text: 'Salvato',
+        text: '',
         borderColor: 'var(--ion-color-success)',
         textColor: 'var(--ion-color-success)',
         showSpinner: false
       },
       'Salvataggio': {
         icon: syncOutline,
-        text: 'Salvataggio...',
+        text: '',
         borderColor: 'var(--ion-color-warning)',
         textColor: 'var(--ion-color-warning)',
         showSpinner: true
       },
       'Offline': {
         icon: cloudOfflineOutline,
-        text: 'Offline',
+        text: '',
         borderColor: 'var(--ion-color-medium)',
         textColor: 'var(--ion-color-medium)',
         showSpinner: false
       },
       'Local': {
         icon: saveOutline,
-        text: 'Locale',
+        text: '',
         borderColor: '#e91e63',
         textColor: '#e91e63',
         showSpinner: false
       },
       'Errore': {
         icon: closeCircleOutline,
-        text: 'Errore',
+        text: '',
         borderColor: 'var(--ion-color-danger)',
         textColor: 'var(--ion-color-danger)',
         showSpinner: false
@@ -701,8 +629,8 @@ const SerieCard = ({
         <IonCardContent style={{ padding: '18px' }}>
           <IonGrid className="ion-no-padding">
             {/* Header */}
-            <IonRow className="ion-align-items-center" style={{ marginBottom: '16px' }}>
-              <IonCol>
+            <IonRow className="ion-align-items-top" style={{ marginBottom: '16px' }}>
+              <IonCol size="5">
                 <IonText style={{ fontSize: '1.2rem', fontWeight: '700', display: 'block' }}>
                   Serie {setIndex + 1}
                 </IonText>
@@ -710,18 +638,18 @@ const SerieCard = ({
                   {repsMin && repsMax ? `${repsMin}-${repsMax} ripetizioni` : 'Non definite'}
                 </IonText>
               </IonCol>
-              <IonCol size="auto" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+              <IonCol size="2" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
 
                 {/* ✅ Badge di stato salvataggio con bordo colorato */}
                 <div
                   style={{
                     fontSize: '0.65rem',
-                    padding: '4px 8px',
+                    padding: '6px 6px',
                     fontWeight: '600',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
-                    border: `2px solid ${saveStatusBadge.borderColor}`,
+                    border: `1px solid ${saveStatusBadge.borderColor}`,
                     borderRadius: '12px',
                     background: 'transparent',
                     color: saveStatusBadge.textColor
@@ -735,17 +663,35 @@ const SerieCard = ({
                   <span>{saveStatusBadge.text}</span>
                 </div>
               </IonCol>
-              <IonCol size="auto" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+              <IonCol size="5" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                 {/* ✅ Icona di completamento invece di CircularProgress */}
-                <IonIcon
-                  icon={completionIcon.icon}
+                <div
                   style={{
-                    fontSize: '25px',
+                    fontSize: '0.65rem',
+                    padding: '4px 4px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    border: `1px solid ${completionIcon.color}`,
+                    borderRadius: '12px',
+                    background: 'transparent',
                     color: completionIcon.color
                   }}
-                />
-              </IonCol>
+                >
+                  <IonIcon
+                    icon={completionIcon.icon}
+                    style={{
+                      fontSize: '10px',
+                      color: completionIcon.color
+                    }}
+                  />
+                  <span>{completionIcon.text}</span>
 
+                </div>
+
+              </IonCol>
+                
             </IonRow>
 
             {/* Input carico e ripetizioni */}
@@ -904,13 +850,11 @@ const SerieCard = ({
         </IonCardContent>
       </IonCard>
 
-      {/* ✅ Timer con gestione singleton */}
+      {/* ✅ Timer con gestione globale persistente */}
       {showRestTime && (
         <RestTimer
           seconds={restTime}
           timerId={timerId}
-          activeTimerId={activeTimerId}
-          setActiveTimerId={setActiveTimerId}
         />
       )}
     </>
@@ -925,8 +869,6 @@ const SetsManager = ({
   initialSets,
   workout_day_exercise,
   previousSetsData,
-  activeTimerId,
-  setActiveTimerId,
   onOpenHistory
 }) => {
   const { sets, updateSet } = useAutosaveSets(exerciseId, initialSets);
@@ -1034,10 +976,8 @@ const SetsManager = ({
             onViewHistory={() => onOpenHistory(index + 1)}
             showRestTime={index < setsState.length - 1}
             restTime={workout_day_exercise?.rest_time || 60}
-            repsMin={workout_day_exercise?.reps_min}
-            repsMax={workout_day_exercise?.reps_max}
-            activeTimerId={activeTimerId}
-            setActiveTimerId={setActiveTimerId}
+            repsMin={workout_exercise_set?.reps_min}
+            repsMax={workout_exercise_set?.reps_max}
             saveStatus={workout_exercise_set.status}
           />
         </div>
@@ -1052,8 +992,6 @@ const SetsManager = ({
 const SingleExerciseContainer = ({
   exerciseId,
   workout_day_exercise,
-  activeTimerId,
-  setActiveTimerId,
   onOpenHistory
 }) => {
   // 1. Fetch Data for THIS specific exercise
@@ -1118,6 +1056,9 @@ const SingleExerciseContainer = ({
           // reps: savedSet.actual_reps || savedSet.reps || 0,
           actual_load: savedSet.actual_load || savedSet.load || 0,
           actual_reps: savedSet.actual_reps || savedSet.reps || 0,
+          reps_min: savedSet.reps_min,
+          reps_max: savedSet.reps_max,
+          rest_time: savedSet.rest_time,
           rpe: savedSet.rpe ?? null,
           execution_rating: savedSet.execution_rating ?? null,
           notes: savedSet.notes ?? null,
@@ -1176,8 +1117,6 @@ const SingleExerciseContainer = ({
       initialSets={initialSets || []}
       workout_day_exercise={workout_day_exercise}
       previousSetsData={previousSetsData}
-      activeTimerId={activeTimerId}
-      setActiveTimerId={setActiveTimerId}
       onOpenHistory={onOpenHistory}
     />
   );
@@ -1199,12 +1138,11 @@ const ExerciseDetail = () => {
   const [selectedSetForHistory, setSelectedSetForHistory] = useState(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [activeTimerId, setActiveTimerId] = useState(null);
   const [hasWaitedForData, setHasWaitedForData] = useState(false);
   const [isExerciseListExpanded, setIsExerciseListExpanded] = useState(false);
 
   // ✅ NUOVO: State per tracciare i progress di tutti gli esercizi
-  const [exerciseProgressMap, setExerciseProgressMap] = useState<Record<string, number>>({});
+  const [exerciseProgressMap, setExerciseProgressMap] = useState<Record<string, { progress: number; completedSets: number; totalSets: number }>>({});
 
   // 1. Load Day Exercises List
   const {
@@ -1217,19 +1155,18 @@ const ExerciseDetail = () => {
   // ✅ Inizializza exerciseProgressMap quando caricano i dati
   useEffect(() => {
     if (workout_day_exercises.length > 0) {
-      const initialProgress: Record<string, number> = {};
+      const initialProgress: Record<string, { progress: number; completedSets: number; totalSets: number }> = {};
       workout_day_exercises.forEach((exercise: any) => {
-        // ✅ Usa il campo progress calcolato dal backend (già corretto con set prescritti)
-        // Se non disponibile, calcola manualmente usando exercise.sets (set prescritti)
-        if (exercise.progress !== undefined) {
-          initialProgress[exercise.id_workout_day_exercise] = exercise.progress;
-        } else {
-          const sets = exercise.workout_exercise_sets || [];
-          const completedSets = sets.filter((s: any) => (s.actual_load || 0) > 0 && (s.actual_reps || 0) > 0).length;
-          const totalSets = exercise.sets || sets.length || 1; // Usa set prescritti, non record esistenti
-          const progress = Math.round((completedSets / totalSets) * 100);
-          initialProgress[exercise.id_workout_day_exercise] = progress;
-        }
+        const sets = exercise.workout_exercise_sets || [];
+        const completedSets = sets.filter((s: any) => (s.actual_load || 0) > 0 && (s.actual_reps || 0) > 0).length;
+        const totalSets = exercise.sets || sets.length || 1; // Usa set prescritti, non record esistenti
+        const progress = exercise.progress !== undefined ? exercise.progress : Math.round((completedSets / totalSets) * 100);
+
+        initialProgress[exercise.id_workout_day_exercise] = {
+          progress,
+          completedSets,
+          totalSets
+        };
       });
       setExerciseProgressMap(initialProgress);
     }
@@ -1238,10 +1175,14 @@ const ExerciseDetail = () => {
   // ✅ Listen per aggiornamenti progress
   useEffect(() => {
     const handleProgressUpdate = (e: any) => {
-      const { exerciseId, progress } = e.detail;
+      const { exerciseId, progress, completedSets, totalSets } = e.detail;
       setExerciseProgressMap(prev => ({
         ...prev,
-        [exerciseId]: progress
+        [exerciseId]: {
+          progress,
+          completedSets,
+          totalSets
+        }
       }));
     };
 
@@ -1560,7 +1501,8 @@ const ExerciseDetail = () => {
             <div className="ion-padding-horizontal" style={{ display: 'flex', overflowX: 'auto', scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}>
               {workout_day_exercises.map((exercise, index) => {
                 // ✅ Usa progress dallo state centralizzato
-                const progress = exerciseProgressMap[exercise.id_workout_day_exercise] || 0;
+                const progressData = exerciseProgressMap[exercise.id_workout_day_exercise];
+                const progress = progressData?.progress || 0;
 
                 return (
                   <ExerciseChip
@@ -1632,13 +1574,11 @@ const ExerciseDetail = () => {
                     >
                       <IonList lines="none" style={{ background: 'transparent' }}>
                         {workout_day_exercises.map((ex, idx) => {
-                          // ✅ Usa progress dallo state centralizzato
-                          const progress = Math.round(exerciseProgressMap[ex.id_workout_day_exercise] || 0);
-
-                          // ✅ Calcola sets completati per il testo
-                          const sets = ex.workout_exercise_sets || [];
-                          const completed = sets.filter((s: any) => (s.actual_load || 0) > 0 && (s.actual_reps || 0) > 0).length;
-                          const total = ex.sets || sets.length || 1; // Usa set prescritti, non record esistenti
+                          // ✅ Usa progress e sets dallo state centralizzato (aggiornato in tempo reale)
+                          const progressData = exerciseProgressMap[ex.id_workout_day_exercise];
+                          const progress = Math.round(progressData?.progress || 0);
+                          const completed = progressData?.completedSets || 0;
+                          const total = progressData?.totalSets || ex.sets || 1;
 
                           return (
                             <motion.div
@@ -1652,7 +1592,6 @@ const ExerciseDetail = () => {
                                 detail={false}
                                 onClick={() => {
                                   selectExercise(idx);
-                                  setIsExerciseListExpanded(false);
                                 }}
                                 style={{
                                   '--background': selectedExerciseIndex === idx
@@ -1700,7 +1639,7 @@ const ExerciseDetail = () => {
                                     color: 'var(--ion-color-medium)',
                                     margin: '2px 0 0 0'
                                   }}>
-                                    {sets.length} serie • {completed}/{total} completate
+                                    {total} serie • {completed}/{total} completate
                                   </p>
                                 </IonLabel>
 
@@ -1737,8 +1676,6 @@ const ExerciseDetail = () => {
               key={currentWorkoutDayExerciseId}
               exerciseId={currentWorkoutDayExerciseId}
               workout_day_exercise={workout_day_exercise}
-              activeTimerId={activeTimerId}
-              setActiveTimerId={setActiveTimerId}
               onOpenHistory={openHistoryModal}
             />
           )}

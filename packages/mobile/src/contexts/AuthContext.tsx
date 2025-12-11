@@ -216,11 +216,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         console.log('⚠️ [AuthContext] Token scaduto, provo refresh...');
 
-        const refreshTokenValid = await verifyRefreshToken();
+        const refreshResult = await verifyRefreshToken();
 
-        if (refreshTokenValid) {
-          console.log('✅ [AuthContext] Refresh token valido, carico dati utente');
+        if (refreshResult.isValid) {
+          console.log('✅ [AuthContext] Refresh token valido, salvo nuovi token');
 
+          // ✅ Salva i nuovi token ricevuti dal refresh
+          if (refreshResult.accessToken && refreshResult.refreshToken) {
+            const existingTokens = await getAuthTokens();
+            await saveAuthTokens({
+              accessToken: refreshResult.accessToken,
+              refreshToken: refreshResult.refreshToken,
+              expiresAt: Date.now() + 3600 * 1000,
+              userId: existingTokens?.userId || ''
+            });
+          }
+
+          // ✅ Carica dati utente
           const userData = await getUserData();
           console.log('✅ [AuthContext] Dati utente caricati:', userData);
 

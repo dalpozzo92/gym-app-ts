@@ -19,21 +19,21 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, customConfig = null }
   const config = customConfig || getRouteConfig(location.pathname);
   
   return (
-    <IonPage className="no-scrollbar">
-{config.showNavBar && (
-        <NavBar 
+    <IonPage className="no-scrollbar" style={{ overflow: 'hidden' }}>
+      {config.showNavBar && (
+        <NavBar
           title={config.title}
           showBackButton={config.showBackButton}
           showAvatar={config.showAvatar}
           showSettingsButton={config.showSettingsButton}
         />
       )}
-      <IonContent fullscreen>
+      <IonContent fullscreen scrollY={true} style={{ '--overflow': 'hidden' } as any}>
         <MotionPage useMotion={config.useMotion}>
           {children}
         </MotionPage>
       </IonContent>
-      
+
       {config.showTabs && <TabBar />}
     </IonPage>
   );

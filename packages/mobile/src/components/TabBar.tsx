@@ -18,6 +18,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import ROUTES from '@/routes';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgramActive } from '@/hooks/useProgram';
+import GlobalTimer from '@/components/GlobalTimer';
 
 const TabBar: React.FC = () => {
   const location = useLocation();
@@ -50,7 +51,7 @@ const TabBar: React.FC = () => {
   const styles: Record<string, any> = {
     footer: {
       '--background': 'transparent',
-      marginBottom: '15px',
+      marginBottom: 'max(8px, env(safe-area-inset-bottom))',
     },
     container: {
       padding: '10px 16px',
@@ -133,9 +134,11 @@ const TabBar: React.FC = () => {
   }, []);
 
   return (
-    <IonFooter className="ion-no-border" style={styles.footer as any}>
-      <div style={styles.container as any}>
-        <IonTabBar slot="bottom" style={styles.tabBar as any}>
+    <>
+      <GlobalTimer />
+      <IonFooter className="ion-no-border" style={styles.footer as any}>
+        <div style={styles.container as any}>
+          <IonTabBar slot="bottom" style={styles.tabBar as any}>
           
           {/* Tab Home */}
           <IonTabButton 
@@ -188,6 +191,7 @@ const TabBar: React.FC = () => {
         </IonTabBar>
       </div>
     </IonFooter>
+    </>
   );
 };
 

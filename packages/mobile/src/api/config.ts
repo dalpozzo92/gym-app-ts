@@ -15,6 +15,12 @@ export const apiClient: AxiosInstance = axios.create({
 // ✅ Interceptor per aggiungere Bearer Token (Dual Auth per PWA iOS)
 apiClient.interceptors.request.use(async (config) => {
   try {
+    // ✅ Non aggiungere Bearer token per le chiamate di refresh
+    // (il refresh deve usare solo il cookie HTTP-only)
+    if (config.url?.includes('/verify-refresh-token') || config.skipAuthRefresh) {
+      return config;
+    }
+
     // Importiamo dinamicamente per evitare cicli
     const { getAuthTokens } = await import('@/db/dexie');
     const tokens = await getAuthTokens();

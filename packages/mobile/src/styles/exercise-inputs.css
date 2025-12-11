@@ -7,7 +7,6 @@
   min-height: 56px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .exercise-input-label-top {
@@ -23,7 +22,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
 }
 
 .exercise-input-controls input {

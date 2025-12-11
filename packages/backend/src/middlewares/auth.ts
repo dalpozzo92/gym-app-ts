@@ -159,19 +159,8 @@ export const authenticateUser = async (req: FastifyRequest, reply: FastifyReply)
             return reply.code(401).send({ message: 'Sessione scaduta, effettua nuovamente il login' });
         }
 
-        reply.setCookie('sb_access_token', refreshData.session.access_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: refreshData.session.expires_in
-        });
-
-        reply.setCookie('sb_refresh_token', refreshData.session.refresh_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 24 * 60 * 60 // seconds
-        });
+        // ✅ Usa setSessionCookies per evitare cookie duplicati
+        setSessionCookies(reply, refreshData.session.access_token, refreshData.session.refresh_token, refreshData.session.expires_in);
 
         const { data: userDetailsAfterRefresh, error: detailsErrorAfterRefresh } = await supabase
             .from('user_details')

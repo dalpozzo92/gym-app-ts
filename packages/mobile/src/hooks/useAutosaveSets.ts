@@ -7,6 +7,10 @@ type SetState = {
   load?: number;
   actual_reps?: number; // ✅ New field
   actual_load?: number; // ✅ New field
+  reps_min?: number | null;
+  reps_max?: number | null;
+  rest_time?: number | null;
+  target_load?: number | null;
   rpe?: number | null;
   execution_rating?: number | null;
   notes?: string | null;

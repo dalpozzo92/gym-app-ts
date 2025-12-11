@@ -24,7 +24,8 @@ import {
   IonChip,
   IonFab,
   IonFabButton,
-  IonSpinner
+  IonSpinner,
+  useIonViewWillEnter
 } from '@ionic/react';
 import {
   timeOutline,
@@ -33,7 +34,8 @@ import {
   arrowForwardOutline,
   informationCircleOutline,
   calendarOutline,
-  personOutline
+  personOutline,
+  arrowRedoOutline
 } from 'ionicons/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProgram } from '@/contexts/ProgramContext';
@@ -328,17 +330,37 @@ const ProgramDay: React.FC<ProgramDayProps> = ({
                               {workout_day_exercise.exercise_name}
                             </h3>
                           </IonText>
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                            <IonBadge style={{
-                              '--background': 'rgba(var(--ion-color-primary-rgb), 0.15)',
-                              '--color': 'var(--ion-contrast-color)',
-                              fontSize: '0.7rem'
-                            }}>
-                              {workout_day_exercise.sets} × {workout_day_exercise.reps_min}
-                              {workout_day_exercise.reps_max && workout_day_exercise.reps_max !== workout_day_exercise.reps_min
-                                ? `-${workout_day_exercise.reps_max}`
-                                : ''} rip
-                            </IonBadge>
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                            {(() => {
+                              // ✅ Raggruppa le serie per reps_min e reps_max uguali
+                              const sets = workout_day_exercise.workout_exercise_sets || [];
+                              const groupedSets: Record<string, number> = {};
+
+                              sets.forEach((set: any) => {
+                                const repsMin = set.reps_min || 0;
+                                const repsMax = set.reps_max || repsMin;
+                                const key = `${repsMin}-${repsMax}`;
+                                groupedSets[key] = (groupedSets[key] || 0) + 1;
+                              });
+
+                              // ✅ Crea un chip per ogni gruppo
+                              return Object.entries(groupedSets).map(([key, count]) => {
+                                const [repsMin, repsMax] = key.split('-').map(Number);
+                                return (
+                                  <IonBadge
+                                    key={key}
+                                    style={{
+                                      '--background': 'rgba(var(--ion-color-primary-rgb), 0.15)',
+                                      '--color': 'var(--ion-contrast-color)',
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    {count} × {repsMin}
+                                    {repsMax && repsMax !== repsMin ? `-${repsMax}` : ''} rip
+                                  </IonBadge>
+                                );
+                              });
+                            })()}
                           </div>
                         </IonCol>
 
@@ -414,6 +436,12 @@ const ProgramWeeks: React.FC = () => {
       setViewedWeek(initialWeek);
     }
   }, [initialWeek, viewedWeek, setViewedWeek]);
+
+  // ✅ Refetch quando la pagina diventa visibile (es. tornando indietro da ExerciseDetail)
+  useIonViewWillEnter(() => {
+    console.log('🔄 [ProgramWeeks] Pagina visibile, refetch dati');
+    refetchProgram();
+  });
 
   // ✅ Auto-scroll alla settimana selezionata (viewedWeek)
   useEffect(() => {
@@ -784,14 +812,8 @@ const ProgramWeeks: React.FC = () => {
         loaderSize="small"
         loaderSpeed={1}
       >
-        <AnimatedBackground
-          variant="linee-move"
-          intensity="light"
-          height="250px"
-          position="fixed"
-          speed={3}
-          fadeInDuration={2000}
-        />
+        <AnimatedBackground variant="linee-move" intensity="light" height="250px" position="fixed" speed={3} fadeInDuration={2000} />
+        
 
         <div className="page-header ion-padding-horizontal ion-padding-top">
           <IonText>
@@ -901,8 +923,8 @@ const ProgramWeeks: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        <IonIcon icon={checkmarkCircleOutline} slot="start" />
-                        Completa
+                        <IonIcon icon={arrowRedoOutline} slot="start" />
+                        Nuova settimana
                       </>
                     )}
                   </IonButton>

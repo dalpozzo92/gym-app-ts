@@ -47,7 +47,6 @@ export const useExerciseDetailData = (exerciseId?: string | number) => {
                     reps_min: s.reps_min,
                     reps_max: s.reps_max,
                     rest_time: s.rest_time,
-                    target_load: s.target_load,
                     completed: s.completed,
                     completed_at: s.completed_at,
                     id_reps_type: s.id_reps_type,

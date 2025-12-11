@@ -97,7 +97,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         // Nota: qui assumiamo una opacità fissa, es. 0.2 o 0.15 come i default
         // Nel variables.css il default dark è rgba(20, 39, 62, 0.288)
         // Proviamo una via di mezzo leggibile
-        setStyle('--ion-card-background', `rgba(${secRgb}, 0.03)`);
+        setStyle('--ion-card-background', `rgba(${secRgb}, 0.1)`);
       }
     }
     if (theme.color_tertiary) applyColorSet('tertiary', theme.color_tertiary);

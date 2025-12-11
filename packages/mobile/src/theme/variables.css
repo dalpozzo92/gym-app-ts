@@ -108,7 +108,13 @@
   /* Applicazione della spaziatura ai componenti Ionic */
   --ion-padding: var(--app-spacing-md);
   --ion-margin: var(--app-spacing-md);
-  --ion-safe-margin-bottom: calc(env(safe-area-inset-bottom) + 16px);
+  --ion-safe-margin-bottom: env(safe-area-inset-bottom);
+
+  /* Safe area insets per iOS notch */
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-bottom: env(safe-area-inset-bottom);
+  --safe-area-left: env(safe-area-inset-left);
+  --safe-area-right: env(safe-area-inset-right);
 
   /* Altre personalizzazioni di UI */
   --ion-item-background: transparent;
@@ -190,15 +196,44 @@ body {
   --padding-bottom: var(--ion-safe-margin-bottom, 16px);
 }
 
+/* Nascondi scrollbar globalmente */
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
 ion-page::-webkit-scrollbar {
-  display: none;
+  display: none !important;
 }
 
 ion-page {
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
-  /* IE 10+ */
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+ion-content::-webkit-scrollbar {
+  display: none !important;
+}
+
+ion-content {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+ion-content::part(scroll) {
+  overflow-y: auto;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+ion-content::part(scroll)::-webkit-scrollbar {
+  display: none !important;
 }
 
 

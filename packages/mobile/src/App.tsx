@@ -6,6 +6,7 @@ import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ProgramProvider } from '@/contexts/ProgramContext';
+import { TimerProvider } from '@/contexts/TimerContext';
 import PageLayout from '@/components/PageLayout';
 import ROUTES, { getRouteConfig } from '@/routes';
 
@@ -31,11 +32,13 @@ const App: React.FC = () => (
   <AuthProvider>
     <ThemeProvider>
       <ProgramProvider>
-        <IonApp>
-          <IonReactRouter>
-            <AppRoutes />
-          </IonReactRouter>
-        </IonApp>
+        <TimerProvider>
+          <IonApp style={{ overflow: 'hidden' }}>
+            <IonReactRouter>
+              <AppRoutes />
+            </IonReactRouter>
+          </IonApp>
+        </TimerProvider>
       </ProgramProvider>
     </ThemeProvider>
   </AuthProvider>

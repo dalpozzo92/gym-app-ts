@@ -973,6 +973,8 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
               id_workout_day_exercise,
               id_exercise_list,
               order_number,
+              sets,
+              id_program_exercise_group_intensity,
               notes
             FROM workout_day_exercises
             WHERE id_program_day = ${day.id_program_day}
@@ -988,12 +990,16 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                 id_program_day,
                 id_exercise_list,
                 order_number,
+                sets,
+                id_program_exercise_group_intensity,
                 notes
               )
               VALUES (
                 ${newDayId},
                 ${exercise.id_exercise_list},
                 ${exercise.order_number},
+                ${exercise.sets},
+                ${exercise.id_program_exercise_group_intensity},
                 ${exercise.notes}
               )
               RETURNING id_workout_day_exercise
@@ -1037,7 +1043,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                   actual_reps,
                   rpe,
                   execution_rating,
-                  technique_rating,
                   completed,
                   completed_at,
                   notes_tracking,
@@ -1054,7 +1059,6 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
                   ${set.group_intensity_id},
                   ${set.notes},
                   ${set.actual_load || null},
-                  null,
                   null,
                   null,
                   null,
