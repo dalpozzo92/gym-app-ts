@@ -46,12 +46,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
             setSessionCookies(reply, data.session.access_token, data.session.refresh_token, data.session.expires_in);
 
             debug('[login] Login effettuato con successo per: ' + email);
-            // Non restituiamo i token al client: restano solo nei cookie httpOnly
-            // UPDATE: Restituiamo anche i token per supportare PWA su iOS (dove i cookie di terze parti sono bloccati)
+            // ✅ I token sono gestiti tramite cookie HTTP-only per sicurezza
+            // Non vengono inviati al client - solo i dati utente
             return reply.send({
                 message: 'Login effettuato con successo',
-                accessToken: data.session.access_token,
-                refreshToken: data.session.refresh_token,
                 user: {
                     id: data.user.id,
                     email: data.user.email,
@@ -155,11 +153,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
         setSessionCookies(reply, result.token, result.session?.refresh_token || refreshTokenStr, result.expiresIn || 3600);
 
         debug('[refresh-token] Token refreshato con successo');
+        // ✅ I token sono gestiti tramite cookie HTTP-only
+        // Non vengono inviati al client - solo conferma del refresh
         return reply.send({
             isValid: true,
-            token: result.token,
-            refreshToken: result.session?.refresh_token || refreshTokenStr,
-            expiresIn: result.expiresIn || 3600,
             message: 'Token refreshato con successo'
         });
     });

@@ -1,11 +1,84 @@
-import React from 'react';
-import { IonIcon, IonProgressBar } from '@ionic/react';
+import React, { useEffect, useRef } from 'react';
+import { IonIcon, IonProgressBar, createAnimation } from '@ionic/react';
 import { chevronDownOutline, stopOutline } from 'ionicons/icons';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useTimer } from '@/contexts/TimerContext';
 
 const GlobalTimer: React.FC = () => {
   const { activeTimer, resetTimer, isTimerVisible, setTimerVisible } = useTimer();
+  const expandedTimerRef = useRef<HTMLDivElement>(null);
+  const floatingButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Animazioni per expanded timer
+  useEffect(() => {
+    if (!activeTimer) {
+      // Se non c'è timer, nascondi immediatamente
+      if (expandedTimerRef.current) {
+        expandedTimerRef.current.style.display = 'none';
+      }
+      return;
+    }
+
+    if (expandedTimerRef.current) {
+      if (isTimerVisible) {
+        expandedTimerRef.current.style.display = 'flex';
+        const animation = createAnimation()
+          .addElement(expandedTimerRef.current)
+          .duration(300)
+          .easing('ease-out')
+          .fromTo('transform', 'translateY(100px)', 'translateY(0)')
+          .fromTo('opacity', '0', '1');
+        animation.play();
+      } else {
+        const animation = createAnimation()
+          .addElement(expandedTimerRef.current)
+          .duration(250)
+          .easing('ease-in')
+          .fromTo('transform', 'translateY(0)', 'translateY(100px)')
+          .fromTo('opacity', '1', '0');
+        animation.play().then(() => {
+          if (expandedTimerRef.current) {
+            expandedTimerRef.current.style.display = 'none';
+          }
+        });
+      }
+    }
+  }, [isTimerVisible]);
+
+  // Animazioni per floating button
+  useEffect(() => {
+    if (!activeTimer) {
+      // Se non c'è timer, nascondi immediatamente
+      if (floatingButtonRef.current) {
+        floatingButtonRef.current.style.display = 'none';
+      }
+      return;
+    }
+
+    if (floatingButtonRef.current) {
+      if (!isTimerVisible) {
+        floatingButtonRef.current.style.display = 'flex';
+        const animation = createAnimation()
+          .addElement(floatingButtonRef.current)
+          .duration(250)
+          .easing('ease-out')
+          .fromTo('transform', 'scale(0)', 'scale(1)')
+          .fromTo('opacity', '0', '1');
+        animation.play();
+      } else {
+        const animation = createAnimation()
+          .addElement(floatingButtonRef.current)
+          .duration(200)
+          .easing('ease-in')
+          .fromTo('transform', 'scale(1)', 'scale(0)')
+          .fromTo('opacity', '1', '0');
+        animation.play().then(() => {
+          if (floatingButtonRef.current) {
+            floatingButtonRef.current.style.display = 'none';
+          }
+        });
+      }
+    }
+  }, [isTimerVisible]);
 
   // Non mostrare nulla se non c'è un timer attivo
   if (!activeTimer) return null;
@@ -19,32 +92,29 @@ const GlobalTimer: React.FC = () => {
   const progress = (activeTimer.initialSeconds - activeTimer.timeLeft) / activeTimer.initialSeconds;
 
   return (
-    <AnimatePresence>
-      {isTimerVisible && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{
-            position: 'fixed',
-            bottom: 'calc(72px + max(8px, env(safe-area-inset-bottom)))', // Sopra il TabBar
-            left: '16px',
-            right: '16px',
-            zIndex: 998,
-            display: 'flex',
-            justifyContent: 'center'
-          }}
-        >
+    <>
+      {/* Expanded Timer */}
+      <div
+        ref={expandedTimerRef}
+        style={{
+          position: 'fixed',
+          bottom: 'calc(72px + max(8px, env(safe-area-inset-bottom)))',
+          left: '16px',
+          right: '16px',
+          zIndex: 10000000,
+          display: isTimerVisible ? 'flex' : 'none',
+          justifyContent: 'center'
+        }}
+      >
           <div
             style={{
               background: 'rgba(var(--ion-background-color-rgb), 0.95)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              borderRadius: '24px',
+              borderRadius: '50px',
               padding: '12px 16px',
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-              border: '1px solid rgba(var(--ion-color-primary-rgb), 0.2)',
+              border: '1px solid rgba(var(--ion-color-primary-rgb), 0.1)',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
@@ -124,40 +194,35 @@ const GlobalTimer: React.FC = () => {
               />
             </button>
           </div>
-        </motion.div>
-      )}
+      </div>
 
       {/* Floating button quando nascosto */}
-      {!isTimerVisible && (
-        <motion.button
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          exit={{ scale: 0 }}
-          onClick={() => setTimerVisible(true)}
-          style={{
-            position: 'fixed',
-            bottom: 'calc(72px + max(8px, env(safe-area-inset-bottom)))',
-            right: '16px',
-            zIndex: 998,
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            background: 'var(--ion-color-primary)',
-            border: 'none',
-            boxShadow: '0 4px 16px rgba(var(--ion-color-primary-rgb), 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            color: 'white',
-            fontWeight: '700',
-            fontSize: '0.9rem'
-          }}
-        >
-          {formatTime(activeTimer.timeLeft)}
-        </motion.button>
-      )}
-    </AnimatePresence>
+      <button
+        ref={floatingButtonRef}
+        onClick={() => setTimerVisible(true)}
+        style={{
+          position: 'fixed',
+          bottom: 'calc(72px + max(8px, env(safe-area-inset-bottom)))',
+          right: '16px',
+          zIndex: 10000000,
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          background: 'var(--ion-color-primary)',
+          border: 'none',
+          boxShadow: '0 4px 16px rgba(var(--ion-color-primary-rgb), 0.4)',
+          display: !isTimerVisible ? 'flex' : 'none',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          color: 'white',
+          fontWeight: '700',
+          fontSize: '0.9rem'
+        }}
+      >
+        {formatTime(activeTimer.timeLeft)}
+      </button>
+    </>
   );
 };
 

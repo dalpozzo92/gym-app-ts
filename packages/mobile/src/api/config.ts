@@ -1,8 +1,19 @@
-// @ts-nocheck
 import axios, { type AxiosInstance } from 'axios';
 
-export const API_BASE_URL: string = import.meta.env.VITE_API_URL || "fit-gilli-dalpozzo-3a79c772.koyeb.app/gym-backend"
-  ;
+// Estendi il tipo di Axios per includere flag custom
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    _retry?: boolean;
+    skipAuthRefresh?: boolean;
+  }
+
+  export interface InternalAxiosRequestConfig {
+    _retry?: boolean;
+    skipAuthRefresh?: boolean;
+  }
+}
+
+export const API_BASE_URL: string = import.meta.env.VITE_API_URL || "https://fit-gilli-dalpozzo-3a79c772.koyeb.app/gym-backend";
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -12,25 +23,11 @@ export const apiClient: AxiosInstance = axios.create({
   withCredentials: true // Importante per inviare/ricevere i cookie
 });
 
-// ✅ Interceptor per aggiungere Bearer Token (Dual Auth per PWA iOS)
+// ✅ Interceptor per aggiungere header custom se necessario
+// NOTA: I token sono gestiti tramite cookie HTTP-only (withCredentials: true)
+// Non usiamo più Bearer Token nell'header Authorization
 apiClient.interceptors.request.use(async (config) => {
-  try {
-    // ✅ Non aggiungere Bearer token per le chiamate di refresh
-    // (il refresh deve usare solo il cookie HTTP-only)
-    if (config.url?.includes('/verify-refresh-token') || config.skipAuthRefresh) {
-      return config;
-    }
-
-    // Importiamo dinamicamente per evitare cicli
-    const { getAuthTokens } = await import('@/db/dexie');
-    const tokens = await getAuthTokens();
-
-    if (tokens?.accessToken) {
-      config.headers.Authorization = `Bearer ${tokens.accessToken}`;
-    }
-  } catch (err) {
-    // Ignora errori di lettura token
-  }
+  // Nessuna modifica necessaria - i cookie vengono inviati automaticamente
   return config;
 });
 

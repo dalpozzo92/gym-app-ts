@@ -87,7 +87,7 @@
   --ion-popover-border-radius: var(--app-border-radius-xl);
   --ion-modal-border-radius: var(--app-border-radius-xl);
   --ion-action-sheet-border-radius: var(--app-border-radius-xl);
-
+  --highlight-border-radius: var(--app-border-radius-xl);
   /* Ombre */
   --app-box-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
   --app-box-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
@@ -124,8 +124,8 @@
 
 /* DARK MODE (default) */
 :root {
-  --ion-background-color: #000000;
-  --ion-background-color-rgb: 0, 0, 0;
+  --ion-background-color: #0C1219;
+  --ion-background-color-rgb: 12, 18, 25;
   --ion-text-color: #ffffff;
   --ion-text-color-rgb: 255, 255, 255;
   --ion-card-background: rgba(20, 39, 62, 0.152);
@@ -138,6 +138,7 @@
   --ion-select-color-rgb: 65, 65, 65;
   --ion-contrast-color: #7d7d7d;
   --ion-action-sheet-background-color: #333333;
+  --ion-button-background:  #494949;
 
 }
 

@@ -14,13 +14,12 @@ type AuthResponse<T> = {
 };
 
 // Login utente tramite backend
-export const loginUser = async (email: string, password: string): Promise<{ user: ApiUser; accessToken: string; refreshToken: string }> => {
+// ✅ I token sono gestiti automaticamente tramite cookie HTTP-only
+export const loginUser = async (email: string, password: string): Promise<{ user: ApiUser }> => {
   try {
-    const response: AuthResponse<{ user: ApiUser; accessToken: string; refreshToken: string }> = await apiClient.post('/api/auth/login', { email, password });
+    const response: AuthResponse<{ user: ApiUser }> = await apiClient.post('/api/auth/login', { email, password });
     return {
-      user: response.data.user,
-      accessToken: response.data.accessToken,
-      refreshToken: response.data.refreshToken
+      user: response.data.user
     };
   } catch (error) {
     console.error('Login error:', error);
@@ -51,13 +50,12 @@ export const verifyToken = async (): Promise<boolean> => {
 };
 
 // Verifica refresh token tramite backend
-export const verifyRefreshToken = async (): Promise<{ isValid: boolean; accessToken?: string; refreshToken?: string }> => {
+// ✅ I token sono gestiti automaticamente tramite cookie HTTP-only
+export const verifyRefreshToken = async (): Promise<{ isValid: boolean }> => {
   try {
-    const response: AuthResponse<{ isValid: boolean; token?: string; refreshToken?: string }> = await apiClient.post('/api/auth/verify-refresh-token');
+    const response: AuthResponse<{ isValid: boolean }> = await apiClient.post('/api/auth/verify-refresh-token');
     return {
-      isValid: response.data.isValid ?? false,
-      accessToken: response.data.token,
-      refreshToken: response.data.refreshToken
+      isValid: response.data.isValid ?? false
     };
   } catch (error) {
     console.error('Refresh Token verification error:', error);

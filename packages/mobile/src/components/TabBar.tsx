@@ -1,10 +1,11 @@
-import React, { useEffect, type CSSProperties } from 'react';
-import { 
-  IonTabBar, 
-  IonTabButton, 
-  IonIcon, 
+import React, { useEffect, useState, useRef, type CSSProperties } from 'react';
+import {
+  IonTabBar,
+  IonTabButton,
+  IonIcon,
   IonLabel,
-  IonFooter
+  IonFooter,
+  createAnimation
 } from '@ionic/react';
 import {
   homeOutline,
@@ -27,6 +28,38 @@ const TabBar: React.FC = () => {
   const { data: activeProgram } = useProgramActive(id_user_details ?? null);
   const resolvedProgramId = (activeProgram as any)?.id_program ?? (activeProgram as any)?.id ?? activeProgramId;
 
+  // Determina se siamo in una delle pagine del workout
+  const isWorkoutTabActive = (): boolean => {
+    const pathname = location.pathname;
+
+    if (pathname === ROUTES.PUBLIC.PROGRAM_LIST) return true;
+    if (pathname.startsWith('/programWeeks/')) return true;
+    if (pathname.startsWith('/exercise-detail/')) return true;
+
+    return false;
+  };
+
+  // State per tracking del tab attivo (0 = home, 1 = workout, 2 = profile)
+  const [activeTabIndex, setActiveTabIndex] = useState(() => {
+    if (location.pathname === ROUTES.PUBLIC.HOME) return 0;
+    if (isWorkoutTabActive()) return 1;
+    if (location.pathname === ROUTES.PUBLIC.PROFILE) return 2;
+    return 0;
+  });
+
+  // Ref per accedere direttamente al DOM element del droplet
+  const dropletRef = useRef<HTMLDivElement>(null);
+
+  // Funzioni per salvare/recuperare l'ultimo indice dal sessionStorage
+  const getLastTabIndex = (): number | null => {
+    const saved = sessionStorage.getItem('lastTabIndex');
+    return saved !== null ? parseInt(saved, 10) : null;
+  };
+
+  const saveTabIndex = (index: number) => {
+    sessionStorage.setItem('lastTabIndex', index.toString());
+  };
+
   const handleProgramTabClick = () => {
     if (resolvedProgramId) {
       const url = ROUTES.PUBLIC.PROGRAM_WEEKS.replace(':id', String(resolvedProgramId));
@@ -36,43 +69,131 @@ const TabBar: React.FC = () => {
     }
   };
 
-  // Determina se siamo in una delle pagine del workout
-  const isWorkoutTabActive = (): boolean => {
-    const pathname = location.pathname;
-    
-    if (pathname === ROUTES.PUBLIC.PROGRAM_LIST) return true;
-    if (pathname.startsWith('/programWeeks/')) return true;
-    if (pathname.startsWith('/exercise-detail/')) return true;
-    
-    return false;
-  };
+  // Aggiorna l'indice del tab attivo basato sulla location E anima
+  useEffect(() => {
+    let newIndex = 0;
+    if (location.pathname === ROUTES.PUBLIC.HOME) {
+      newIndex = 0;
+    } else if (isWorkoutTabActive()) {
+      newIndex = 1;
+    } else if (location.pathname === ROUTES.PUBLIC.PROFILE) {
+      newIndex = 2;
+    }
 
-  // Stili inline per effetto glass
+    const oldIndex = getLastTabIndex();
+
+    console.log('[TabBar] Cambio pathname:', location.pathname, '→ new index:', newIndex, 'lastTabIndex da sessionStorage:', oldIndex);
+
+    // Primo render assoluto (nessun valore salvato): imposta posizione senza animare
+    if (dropletRef.current && oldIndex === null) {
+      console.log('[TabBar] PRIMO RENDER ASSOLUTO - imposto posizione iniziale senza animare');
+      dropletRef.current.style.transform = `translateX(${newIndex * 100}%)`;
+      saveTabIndex(newIndex);
+    }
+    // Se l'indice è cambiato, anima
+    else if (dropletRef.current && oldIndex !== null && oldIndex !== newIndex) {
+      const fromX = oldIndex * 100;
+      const toX = newIndex * 100;
+
+      console.log(`[TabBar Animation] ✅ ESEGUO animazione da ${oldIndex} (${fromX}%) a ${newIndex} (${toX}%)`);
+
+      // Usa Ionic Animations API
+      const animation = createAnimation()
+        .addElement(dropletRef.current)
+        .duration(400)
+        .easing('cubic-bezier(0.34, 1.56, 0.64, 1)')
+        .fromTo('transform', `translateX(${fromX}%)`, `translateX(${toX}%)`);
+
+      // Esegui l'animazione
+      animation.play();
+
+      // Salva il nuovo indice
+      saveTabIndex(newIndex);
+    } else if (oldIndex === newIndex) {
+      console.log('[TabBar] Stesso indice - imposto posizione senza animare');
+      // Imposta la posizione anche se è lo stesso (per remount del componente)
+      if (dropletRef.current) {
+        dropletRef.current.style.transform = `translateX(${newIndex * 100}%)`;
+      }
+    }
+
+    // Aggiorna lo state
+    setActiveTabIndex(newIndex);
+  }, [location.pathname]);
+
+  // Stili inline per effetto liquid glass
   const styles: Record<string, any> = {
     footer: {
       '--background': 'transparent',
-      // marginBottom: 'max(8px, env(safe-area-inset-bottom))',
+      zIndex: 1000
     },
     container: {
-      padding: '10px 10px',
-      background: 'transparent'
+      padding: '12px 16px',
+      background: 'transparent',
+      position: 'relative',
+      isolation: 'isolate'
     },
+    tabBarWrapper: {
+      position: 'relative',
+      borderRadius: '28px'
+    } as CSSProperties,
+    tabBarBackground: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0, 0, 0, 0.4)',
+      backdropFilter: 'blur(12px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+      borderRadius: '50px',
+      boxShadow: `
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.2)
+      `,
+      // border: '1px solid rgba(255, 255, 255, 0.08)',
+      zIndex: 0
+    } as CSSProperties,
+    dropletContainer: {
+      position: 'absolute',
+      top: '0',
+      left: 0,
+      width: '33.333%',
+      height: '68px',
+      pointerEvents: 'none',
+      zIndex: 1,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '8px 8px',
+      willChange: 'transform'
+    } as CSSProperties,
     tabBar: {
-      '--background': 'rgba(var(--ion-background-color-rgb, 255, 255, 255), 0.5)',
-      backdropFilter: 'blur(10px) saturate(2)',
-      WebkitBackdropFilter: 'blur(15px) saturate(2)',
-      borderRadius: '25px',
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-      border: '1px solid rgba(var(--ion-border-color-rgb, 255, 255, 255), 0.15)',
-      overflow: 'hidden',
-      height: '56px',
-      '--border': 'none'
+      '--background': 'transparent',
+      borderRadius: '28px',
+      overflow: 'visible',
+      height: '68px',
+      '--border': 'none',
+      position: 'relative',
+      display: 'flex',
+      background: 'transparent',
+      zIndex: 2
+    } as CSSProperties,
+    droplet: {
+      width: '100%',
+      // maxWidth: '80px',
+      height: '52px',
+      background: 'rgba(255, 255, 255, 0.1)',
+      borderRadius: '26px',
+      boxShadow: 'none'
     } as CSSProperties,
     tabButton: {
-      '--color': 'var(--ion-color-medium)',
-      '--color-selected': 'var(--ion-color-primary)',
+      '--color': 'var(--ion-color-light)',
+      '--color-selected': 'var(--ion-color-light)',
       position: 'relative',
-      transition: 'all 0.3s ease',
+      zIndex: 20,
+      flex: 1,
       '--padding-start': '0',
       '--padding-end': '0',
       '--background': 'transparent',
@@ -84,13 +205,17 @@ const TabBar: React.FC = () => {
       borderLeft: 'none !important'
     } as CSSProperties,
     iconStyles: {
-      fontSize: '22px'
+      fontSize: '24px',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      color: 'var(--ion-color-light)'
     } as CSSProperties,
-    labelStyles: (isSelected?: boolean): CSSProperties => ({
-      fontSize: '12px',
-      fontWeight: isSelected ? 500 : 400,
-      marginTop: '4px'
-    })
+    labelStyles: {
+      fontSize: '11px',
+      fontWeight: 500,
+      marginTop: '6px',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      color: 'var(--ion-color-light)'
+    } as CSSProperties
   };
 
   // Stile globale per rimuovere i bordi
@@ -138,59 +263,73 @@ const TabBar: React.FC = () => {
       <GlobalTimer />
       <IonFooter className="ion-no-border" style={styles.footer as any}>
         <div style={styles.container as any}>
-          <IonTabBar slot="bottom" style={styles.tabBar as any}>
-          
-          {/* Tab Home */}
-          <IonTabButton 
-            tab="home" 
-            onClick={() => history.push(ROUTES.PUBLIC.HOME)}
-            selected={location.pathname === ROUTES.PUBLIC.HOME}
-            style={styles.tabButton as any}
-          >
-            <IonIcon 
-              icon={location.pathname === ROUTES.PUBLIC.HOME ? home : homeOutline} 
-              style={styles.iconStyles as any}
-            />
-            <IonLabel style={(styles.labelStyles as (selected?: boolean) => CSSProperties)(location.pathname === ROUTES.PUBLIC.HOME)}>
-              Home
-            </IonLabel>
-          </IonTabButton>
-          
-          {/* Tab Workout - Include WorkoutList, WorkoutWeeks, ExerciseDetail */}
-          <IonTabButton
-            tab="workout"
-            onClick={handleProgramTabClick}
-            selected={isWorkoutTabActive()}
-            style={styles.tabButton as any}
-          >
-            <IonIcon
-              icon={isWorkoutTabActive() ? barbell : barbellOutline}
-              style={styles.iconStyles as any}
-            />
-            <IonLabel style={(styles.labelStyles as (selected?: boolean) => CSSProperties)(isWorkoutTabActive())}>
-              Workout
-            </IonLabel>
-          </IonTabButton>
+          <div style={styles.tabBarWrapper} key="tab-bar-wrapper">
 
-          {/* Tab Settings */}
-          <IonTabButton 
-            tab="profile" 
-            onClick={() => history.push(ROUTES.PUBLIC.PROFILE)}
-            selected={location.pathname === ROUTES.PUBLIC.PROFILE}
-            style={styles.tabButton as CSSProperties}
-          >
-            <IonIcon 
-              icon={location.pathname === ROUTES.PUBLIC.PROFILE ? person : personOutline} 
-              style={styles.iconStyles as CSSProperties}
-            />
-            <IonLabel style={(styles.labelStyles as (selected?: boolean) => CSSProperties)(location.pathname === ROUTES.PUBLIC.PROFILE)}>
-              Profilo
-            </IonLabel>
-          </IonTabButton>
-          
-        </IonTabBar>
-      </div>
-    </IonFooter>
+            {/* Background glassmorphism layer */}
+            <div style={styles.tabBarBackground} />
+
+            {/* 🫧 Goccia animata che si sposta dietro al tab selezionato */}
+            <div
+              ref={dropletRef}
+              style={styles.dropletContainer as any}
+            >
+              <div style={styles.droplet} />
+            </div>
+
+            <IonTabBar slot="bottom" style={styles.tabBar as any}>
+
+              {/* Tab Home */}
+              <IonTabButton
+                tab="home"
+                onClick={() => history.push(ROUTES.PUBLIC.HOME)}
+                selected={location.pathname === ROUTES.PUBLIC.HOME}
+                style={styles.tabButton as any}
+              >
+                <IonIcon
+                  icon={location.pathname === ROUTES.PUBLIC.HOME ? home : homeOutline}
+                  style={styles.iconStyles}
+                />
+                <IonLabel style={styles.labelStyles}>
+                  Home
+                </IonLabel>
+              </IonTabButton>
+
+              {/* Tab Workout - Include WorkoutList, WorkoutWeeks, ExerciseDetail */}
+              <IonTabButton
+                tab="workout"
+                onClick={handleProgramTabClick}
+                selected={isWorkoutTabActive()}
+                style={styles.tabButton as any}
+              >
+                <IonIcon
+                  icon={isWorkoutTabActive() ? barbell : barbellOutline}
+                  style={styles.iconStyles}
+                />
+                <IonLabel style={styles.labelStyles}>
+                  Workout
+                </IonLabel>
+              </IonTabButton>
+
+              {/* Tab Profile */}
+              <IonTabButton
+                tab="profile"
+                onClick={() => history.push(ROUTES.PUBLIC.PROFILE)}
+                selected={location.pathname === ROUTES.PUBLIC.PROFILE}
+                style={styles.tabButton as any}
+              >
+                <IonIcon
+                  icon={location.pathname === ROUTES.PUBLIC.PROFILE ? person : personOutline}
+                  style={styles.iconStyles}
+                />
+                <IonLabel style={styles.labelStyles}>
+                  Profilo
+                </IonLabel>
+              </IonTabButton>
+
+            </IonTabBar>
+          </div>
+        </div>
+      </IonFooter>
     </>
   );
 };

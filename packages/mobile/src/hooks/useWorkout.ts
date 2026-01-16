@@ -14,17 +14,24 @@ type State<T> = { data?: T; loading: boolean; error?: string };
 
 const useFetch = <T>(fn: () => Promise<T>, deps: any[]) => {
   const [state, setState] = useState<State<T>>({ loading: true });
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    setState({ loading: true });
+    setState(prev => ({ ...prev, loading: true }));
     fn()
       .then(data => !cancelled && setState({ loading: false, data }))
       .catch(err => !cancelled && setState({ loading: false, error: err.message }));
     return () => {
       cancelled = true;
     };
-  }, deps);
-  return state;
+  }, [...deps, refreshKey]);
+
+  return { ...state, refresh };
 };
 
 export const useWeekWorkoutExercises = (id_program_week: number | string | null) =>

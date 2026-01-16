@@ -42,7 +42,19 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   // Determina il colore finale da usare
-  const finalColor = color === 'progressColor' ? getProgressiveColor(percentage) : color;
+  const finalColor = React.useMemo(() => {
+    if (color === 'progressColor') return getProgressiveColor(percentage);
+    if (color === 'primary') return 'var(--ion-color-primary)';
+    if (color === 'secondary') return 'var(--ion-color-secondary)';
+    if (color === 'tertiary') return 'var(--ion-color-tertiary)';
+    if (color === 'success') return 'var(--ion-color-success)';
+    if (color === 'warning') return 'var(--ion-color-warning)';
+    if (color === 'danger') return 'var(--ion-color-danger)';
+    if (color === 'medium') return 'var(--ion-color-medium)';
+    if (color === 'light') return 'var(--ion-color-light)';
+    if (color === 'dark') return 'var(--ion-color-dark)';
+    return color;
+  }, [color, percentage]);
 
   return (
     <div className="circular-progress" style={{ width: size, height: size }}>
@@ -60,7 +72,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
           strokeWidth={strokeWidth}
           fill="none"
         />
-        
+
         {/* Progress circle */}
         <motion.circle
           cx={center}
@@ -82,7 +94,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
           }}
         />
       </svg>
-      
+
       {showText && (
         <div className="circular-progress-text">
           <motion.span

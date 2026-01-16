@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { verifyToken, getUserData, logout, verifyRefreshToken } from '@/api/auth';
-import { saveAuthTokens, getAuthTokens, clearAuthTokens } from '@/db/dexie';
+import { clearAuthTokens } from '@/db/dexie';
 import ROUTES from '@/routes';
 
 type UserRole = 1 | 2 | 3 | number;
@@ -26,7 +26,7 @@ type AuthState = {
 };
 
 type AuthContextValue = AuthState & {
-  login: (data: { user: AuthUser; accessToken: string; refreshToken: string } | null) => void;
+  login: (data: { user: AuthUser } | null) => void;
   logout: (history?: { replace: (path: string) => void }) => Promise<void>;
   checkAuth: () => Promise<boolean>;
   id_user_details: number | null;
@@ -51,14 +51,14 @@ type AuthProviderProps = {
 };
 
 /**
- * 🔐 OFFLINE-FIRST AUTH PROVIDER
+ * 🔐 COOKIE-BASED AUTH PROVIDER
  *
  * Strategia:
- * 1. All'avvio, verifica se c'è internet
- * 2. Se OFFLINE → carica dati utente dalla cache Dexie
- * 3. Se ONLINE → verifica token, refresh se necessario
- * 4. Salva sempre i dati utente in Dexie per uso offline
- * 5. Quando torna internet → auto-refresh token
+ * 1. I token (access + refresh) sono gestiti tramite cookie HTTP-only
+ * 2. I cookie vengono inviati automaticamente con ogni richiesta (withCredentials: true)
+ * 3. Il backend gestisce automaticamente il refresh dei token quando scadono
+ * 4. IndexedDB viene usato solo per pulizia cache al logout
+ * 5. TODO: Supporto offline da implementare in futuro
  */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
@@ -92,21 +92,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       loading: false
     });
 
-    // ✅ Salva user data in Dexie per uso offline
-    if (user) {
-      // ⚠️ IMPORTANTISSIMO: Recupera token esistenti PRIMA di salvare
-      // Su Mobile PWA non usiamo solo cookie, ma anche Bearer Token salvato.
-      // Se sovrascriviamo con null, rompiamo l'auth su iOS/Android.
-      const existingTokens = await getAuthTokens();
-
-      await saveAuthTokens({
-        accessToken: existingTokens?.accessToken || null,
-        refreshToken: existingTokens?.refreshToken || null,
-        expiresAt: existingTokens?.expiresAt || null,
-        userId: String(user.id_user_details || '')
-      });
-      console.log('✅ [AuthContext] User data salvati in Dexie (token preservati)');
-    } else {
+    // ✅ I token sono gestiti automaticamente tramite cookie HTTP-only
+    // IndexedDB non viene più usato per i token
+    // Pulizia cache al logout
+    if (!user) {
       await clearAuthTokens();
     }
   };
@@ -114,18 +103,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // ============================================
   // Login (chiamata da LoginPage)
   // ============================================
-  const loginUser = async (data: { user: AuthUser; accessToken: string; refreshToken: string } | null) => {
+  const loginUser = async (data: { user: AuthUser } | null) => {
     console.log('✅ [AuthContext] Login utente:', data?.user);
 
     if (data) {
-      // ✅ Salva i token in Dexie per uso futuro (fallback se i cookie falliscono)
-      await saveAuthTokens({
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        expiresAt: Date.now() + 3600 * 1000, // Stima, il backend dovrebbe restituirlo
-        userId: String(data.user.id_user_details || '')
-      });
-
+      // ✅ I token sono gestiti automaticamente tramite cookie HTTP-only
+      // Non salviamo più i token in IndexedDB
       setUser(data.user);
     } else {
       setUser(null);
@@ -176,31 +159,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       console.log('🔍 [AuthContext] Verifica autenticazione...');
 
-      // ✅ STEP 1: Se offline, carica da Dexie
+      // ✅ TODO: Supporto offline da implementare in futuro
+      // Per ora gestiamo solo autenticazione online tramite cookie
       if (!navigator.onLine) {
-        console.log('⚠️ [AuthContext] Offline - carico dati dalla cache');
-
-        const cachedAuth = await getAuthTokens();
-
-        if (cachedAuth && cachedAuth.userId) {
-          // Ricostruisci user object dalla cache
-          // (in futuro potresti salvare anche altri dati in Dexie)
-          const cachedUser: AuthUser = {
-            id_user_details: parseInt(cachedAuth.userId, 10)
-          };
-
-          console.log('✅ [AuthContext] Dati utente caricati da cache:', cachedUser);
-
-          await setUser(cachedUser);
-          return true;
-        } else {
-          console.log('⚠️ [AuthContext] Nessun dato in cache - richiesto login');
-          await setUser(null);
-          return false;
-        }
+        console.log('⚠️ [AuthContext] Offline - supporto offline non ancora implementato');
+        await setUser(null);
+        return false;
       }
 
-      // ✅ STEP 2: Se online, verifica token
+      // ✅ Verifica token (dai cookie HTTP-only)
       console.log('🔍 [AuthContext] Online - verifico token...');
 
       const isValid = await verifyToken();
@@ -219,76 +186,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const refreshResult = await verifyRefreshToken();
 
         if (refreshResult.isValid) {
-          console.log('✅ [AuthContext] Refresh token valido, salvo nuovi token');
+          console.log('✅ [AuthContext] Refresh token valido, carico dati utente');
 
-          // ✅ Salva i nuovi token ricevuti dal refresh
-          if (refreshResult.accessToken && refreshResult.refreshToken) {
-            const existingTokens = await getAuthTokens();
-            await saveAuthTokens({
-              accessToken: refreshResult.accessToken,
-              refreshToken: refreshResult.refreshToken,
-              expiresAt: Date.now() + 3600 * 1000,
-              userId: existingTokens?.userId || ''
-            });
-          }
-
-          // ✅ Carica dati utente
+          // ✅ I token sono stati aggiornati automaticamente nei cookie dal backend
           const userData = await getUserData();
           console.log('✅ [AuthContext] Dati utente caricati:', userData);
 
           await setUser(userData);
           return true;
         }
-
-        // ✅ STEP 3: Refresh fallito, prova cache offline o token salvato
-        console.log('⚠️ [AuthContext] Refresh fallito, provo cache/token salvato...');
-
-        const cachedAuth = await getAuthTokens();
-
-        if (cachedAuth && cachedAuth.userId) {
-          // Se abbiamo un token salvato, proviamo a usarlo per verificare l'auth (magari il cookie è bloccato ma il token è valido)
-          if (cachedAuth.accessToken) {
-            console.log('🔄 [AuthContext] Tento verifica con Bearer Token salvato...');
-            // Qui potremmo chiamare verifyToken() ma dobbiamo assicurarci che l'interceptor usi questo token.
-            // Per ora, se abbiamo i dati in cache, li usiamo come fallback "offline-like" ma funzionale
-          }
-
-          const cachedUser: AuthUser = {
-            id_user_details: parseInt(cachedAuth.userId, 10)
-          };
-
-          console.log('✅ [AuthContext] Uso dati dalla cache (refresh fallito):', cachedUser);
-
-          await setUser(cachedUser);
-          return true;
-        }
       }
 
-      // Token non valido e nessuna cache
+      // Token non valido
       console.log('⚠️ [AuthContext] Nessun dato valido, logout');
       await setUser(null);
       return false;
     } catch (error) {
       console.error('❌ [AuthContext] Errore verifica autenticazione:', error);
 
-      // ✅ In caso di errore di rete, prova cache offline
-      try {
-        const cachedAuth = await getAuthTokens();
-
-        if (cachedAuth && cachedAuth.userId) {
-          const cachedUser: AuthUser = {
-            id_user_details: parseInt(cachedAuth.userId, 10)
-          };
-
-          console.log('✅ [AuthContext] Uso dati dalla cache (errore di rete):', cachedUser);
-
-          await setUser(cachedUser);
-          return true;
-        }
-      } catch (cacheError) {
-        console.error('❌ [AuthContext] Errore lettura cache:', cacheError);
-      }
-
+      // ✅ TODO: Gestione errori di rete con cache offline da implementare in futuro
       await setUser(null);
       return false;
     } finally {

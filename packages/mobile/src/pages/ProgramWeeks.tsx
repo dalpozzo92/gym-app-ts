@@ -438,9 +438,10 @@ const ProgramWeeks: React.FC = () => {
   }, [initialWeek, viewedWeek, setViewedWeek]);
 
   // ✅ Refetch quando la pagina diventa visibile (es. tornando indietro da ExerciseDetail)
+  // NOTA: Rimosso refetch automatico per evitare chiamate multiple.
+  // I dati vengono già aggiornati dal Context e dal pull-to-refresh.
   useIonViewWillEnter(() => {
-    console.log('🔄 [ProgramWeeks] Pagina visibile, refetch dati');
-    refetchProgram();
+    // Nessun refetch automatico - usa pull-to-refresh se necessario
   });
 
   // ✅ Auto-scroll alla settimana selezionata (viewedWeek)
@@ -813,7 +814,7 @@ const ProgramWeeks: React.FC = () => {
         loaderSpeed={1}
       >
         <AnimatedBackground variant="linee-move" intensity="light" height="250px" position="fixed" speed={3} fadeInDuration={2000} />
-        
+
 
         <div className="page-header ion-padding-horizontal ion-padding-top">
           <IonText>
@@ -910,7 +911,7 @@ const ProgramWeeks: React.FC = () => {
                     onClick={handleCompleteWeekClick}
                     disabled={isCompletingWeek}
                     style={{
-                      '--border-radius': '12px',
+                      '--border-radius': '24px',
                       '--padding-start': '12px',
                       '--padding-end': '12px',
                       fontWeight: '600',
