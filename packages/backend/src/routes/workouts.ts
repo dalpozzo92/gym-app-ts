@@ -909,7 +909,7 @@ export default async function workoutsRoutes(fastify: FastifyInstance) {
 
     // ✅ TRANSAZIONE: tutto o niente
     try {
-      const result = await sql.begin(async (tx) => {
+      const result = await sql.begin(async (tx: typeof sql) => {
         // ✅ 3. Crea nuova settimana
         const newWeekNumber = week_number + 1;
         debug('[completeWeek] Creazione nuova settimana:', newWeekNumber);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, type CSSProperties } from 'react';
+import React, { useEffect, useRef, type CSSProperties } from 'react';
 import {
   IonTabBar,
   IonTabButton,
@@ -38,14 +38,6 @@ const TabBar: React.FC = () => {
 
     return false;
   };
-
-  // State per tracking del tab attivo (0 = home, 1 = workout, 2 = profile)
-  const [activeTabIndex, setActiveTabIndex] = useState(() => {
-    if (location.pathname === ROUTES.PUBLIC.HOME) return 0;
-    if (isWorkoutTabActive()) return 1;
-    if (location.pathname === ROUTES.PUBLIC.PROFILE) return 2;
-    return 0;
-  });
 
   // Ref per accedere direttamente al DOM element del droplet
   const dropletRef = useRef<HTMLDivElement>(null);
@@ -116,9 +108,6 @@ const TabBar: React.FC = () => {
         dropletRef.current.style.transform = `translateX(${newIndex * 100}%)`;
       }
     }
-
-    // Aggiorna lo state
-    setActiveTabIndex(newIndex);
   }, [location.pathname]);
 
   // Stili inline per effetto liquid glass
