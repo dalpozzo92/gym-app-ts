@@ -75,28 +75,34 @@ fastify.setErrorHandler((error: FastifyError, request, reply) => {
 });
 
 // 404 handler (Fastify handles this by default, but we can customize)
-fastify.setNotFoundHandler((request, reply) => {
-    debug(`[404] Risorsa non trovata: ${request.method} ${request.url}`);
-    reply.status(404).send({ message: 'Risorsa non trovata' });
-});
-
 const start = async () => {
     // Registra plugin per file statici (Frontend React)
-    // Serve i file dalla cartella 'public' (che conterrà la build del frontend)
     const publicPath = path.join(__dirname, '../public');
 
-    // Controlla se la cartella public esiste (solo in produzione o se buildata)
-    // try {
-    //     await fs.promises.access(publicPath);
+    // Configura fastify-static
+    // IMPORTANTE: Non settare 'wildcard' a false se vogliamo gestire noi il 404
+    // Usiamo decorateReply: false per evitare conflitti
     fastify.register(import('@fastify/static'), {
         root: publicPath,
-        prefix: '/', // Serve i file dalla root
-        wildcard: false // Disabilita wildcard per gestire SPA routing manualmente
+        prefix: '/',
+        wildcard: false // Disabilita gestione wildcard automatica per permettere il nostro handler 404
     });
+
     debug(`[server] Static files serving from: ${publicPath}`);
-    // } catch (err) {
-    //     debug('[server] Cartella public non trovata, skipping static files serving');
-    // }
+
+    // Fallback per SPA: Definito DOPO aver registrato routes e static
+    // Questo cattura tutto ciò che non è stato gestito sopra
+    fastify.setNotFoundHandler(async (request, reply) => {
+        // Se è una richiesta API, restituisci 404 JSON standard
+        if (request.url.startsWith('/api')) {
+            debug(`[404] API non trovata: ${request.method} ${request.url}`);
+            return reply.status(404).send({ message: 'Risorsa non trovata' });
+        }
+
+        // Altrimenti servi index.html (React Router gestirà il routing)
+        // Usa fake path per index.html
+        return reply.sendFile('index.html');
+    });
 
     const port = parseInt(process.env.PORT || '3000');
     try {
@@ -107,18 +113,5 @@ const start = async () => {
         process.exit(1);
     }
 };
-
-// Fallback per SPA: Qualsiasi rotta non trovata (e non API) restituisce index.html
-fastify.setNotFoundHandler(async (request, reply) => {
-    // Se è una richiesta API, restituisci 404 JSON standard
-    if (request.url.startsWith('/api')) {
-        debug(`[404] API non trovata: ${request.method} ${request.url}`);
-        return reply.status(404).send({ message: 'Risorsa non trovata' });
-    }
-
-    // Altrimenti servi index.html (React Router gestirà il routing)
-    const indexHtmlPath = path.join(__dirname, '../public/index.html');
-    return reply.sendFile('index.html');
-});
 
 start();
