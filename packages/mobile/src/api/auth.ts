@@ -9,64 +9,55 @@ export type ApiUser = {
   [key: string]: unknown;
 };
 
-type AuthResponse<T> = {
-  data: T;
-};
-
-// Login utente tramite backend
-// ✅ I token sono gestiti automaticamente tramite cookie HTTP-only
+// Login tramite backend (imposta cookie HTTP-only)
 export const loginUser = async (email: string, password: string): Promise<{ user: ApiUser }> => {
-  try {
-    const response: AuthResponse<{ user: ApiUser }> = await apiClient.post('/api/auth/login', { email, password });
-    return {
-      user: response.data.user
-    };
-  } catch (error) {
-    console.error('Login error:', error);
-    throw error;
-  }
+  const response = await apiClient.post<{ user: ApiUser }>('/api/auth/login', {
+    email,
+    password
+  });
+
+  return { user: response.data.user };
 };
 
-// Registrazione utente tramite backend
+// Registrazione tramite backend
 export const registerUser = async (name: string, email: string, password: string): Promise<unknown> => {
-  try {
-    const response: AuthResponse<unknown> = await apiClient.post('/api/auth/register', { name, email, password });
-    return response.data;
-  } catch (error) {
-    console.error('Registration error:', error);
-    throw error;
-  }
+  const response = await apiClient.post('/api/auth/register', {
+    name,
+    email,
+    password
+  });
+
+  return response.data;
 };
 
-// Verifica token tramite backend
+// Verifica se c'è una sessione valida (controlla cookie)
 export const verifyToken = async (): Promise<boolean> => {
   try {
-    const response: AuthResponse<{ isValid: boolean }> = await apiClient.get('/api/auth/verify-token');
+    const response = await apiClient.get<{ isValid: boolean }>('/api/auth/verify-token', {
+      skipAuthRefresh: true
+    });
     return response.data.isValid;
-  } catch (error) {
-    console.error('Token verification error:', error);
+  } catch {
     return false;
   }
 };
 
-// Verifica refresh token tramite backend
-// ✅ I token sono gestiti automaticamente tramite cookie HTTP-only
+// Refresh del token (usa cookie refresh_token)
 export const verifyRefreshToken = async (): Promise<{ isValid: boolean }> => {
   try {
-    const response: AuthResponse<{ isValid: boolean }> = await apiClient.post('/api/auth/verify-refresh-token');
-    return {
-      isValid: response.data.isValid ?? false
-    };
-  } catch (error) {
-    console.error('Refresh Token verification error:', error);
+    const response = await apiClient.post<{ isValid: boolean }>('/api/auth/verify-refresh-token', {}, {
+      skipAuthRefresh: true
+    });
+    return { isValid: response.data.isValid };
+  } catch {
     return { isValid: false };
   }
 };
 
-// Verifica ruolo admin tramite backend
+// Verifica ruolo admin
 export const verifyAdmin = async (): Promise<boolean> => {
   try {
-    const response: AuthResponse<{ isAdmin: boolean }> = await apiClient.get('/api/auth/verify-admin');
+    const response = await apiClient.get<{ isAdmin: boolean }>('/api/auth/verify-admin');
     return response.data.isAdmin;
   } catch (error) {
     console.error('Admin verification error:', error);
@@ -74,10 +65,10 @@ export const verifyAdmin = async (): Promise<boolean> => {
   }
 };
 
-// Verifica ruolo tramite backend
+// Verifica ruolo
 export const verifyRole = async (): Promise<unknown> => {
   try {
-    const response: AuthResponse<unknown> = await apiClient.get('/api/auth/verify-role');
+    const response = await apiClient.get('/api/auth/verify-role');
     return response.data;
   } catch (error) {
     console.error('Role verification error:', error);
@@ -85,7 +76,7 @@ export const verifyRole = async (): Promise<unknown> => {
   }
 };
 
-// Logout utente tramite backend
+// Logout (elimina cookie)
 export const logout = async (): Promise<void> => {
   try {
     await apiClient.post('/api/auth/logout');
@@ -95,10 +86,10 @@ export const logout = async (): Promise<void> => {
   }
 };
 
-// Ottieni dati utente tramite backend
+// Ottieni dati utente dal backend
 export const getUserData = async (): Promise<ApiUser> => {
   try {
-    const response: AuthResponse<{ user: ApiUser }> = await apiClient.get('/api/auth/me');
+    const response = await apiClient.get<{ user: ApiUser }>('/api/auth/me');
     return response.data.user;
   } catch (error) {
     console.error('Get user data error:', error);
@@ -109,7 +100,7 @@ export const getUserData = async (): Promise<ApiUser> => {
 // Ottieni tutti gli utenti (solo per admin)
 export const getAllUsers = async (): Promise<ApiUser[]> => {
   try {
-    const response: AuthResponse<{ users: ApiUser[] }> = await apiClient.get('/api/users/all');
+    const response = await apiClient.get<{ users: ApiUser[] }>('/api/users/all');
     return response.data.users;
   } catch (error) {
     console.error('Get all users error:', error);

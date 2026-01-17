@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { verifyToken, getUserData, logout, verifyRefreshToken } from '@/api/auth';
+import React, { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
+import { getUserData, logout as logoutApi, verifyToken } from '@/api/auth';
 import { clearAuthTokens } from '@/db/dexie';
 import ROUTES from '@/routes';
 
@@ -51,14 +51,13 @@ type AuthProviderProps = {
 };
 
 /**
- * 🔐 COOKIE-BASED AUTH PROVIDER
+ * AUTH PROVIDER (Cookie-based)
  *
  * Strategia:
- * 1. I token (access + refresh) sono gestiti tramite cookie HTTP-only
- * 2. I cookie vengono inviati automaticamente con ogni richiesta (withCredentials: true)
- * 3. Il backend gestisce automaticamente il refresh dei token quando scadono
- * 4. IndexedDB viene usato solo per pulizia cache al logout
- * 5. TODO: Supporto offline da implementare in futuro
+ * 1. Il backend imposta cookie HTTP-only per access_token e refresh_token
+ * 2. Axios invia automaticamente i cookie con withCredentials: true
+ * 3. Il proxy Netlify rende le richieste same-origin (cookie first-party)
+ * 4. Funziona su iOS PWA senza problemi
  */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
@@ -71,65 +70,72 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading: true
   });
 
-  // ============================================
+  // Ref per prevenire chiamate duplicate
+  const isLoadingUserData = useRef(false);
+
   // Helper per aggiornare stato
-  // ============================================
   const updateState = (updates: Partial<AuthState>) => {
     setState(prev => ({ ...prev, ...updates }));
   };
 
-  // ============================================
-  // Imposta user e derivati (admin, PT)
-  // ============================================
-  const setUser = async (user: AuthUser | null) => {
+  // Imposta user e derivati
+  const setUser = (user: AuthUser | null) => {
     updateState({
       isAuthenticated: !!user,
-      isAdmin: user?.user_details_type === 1, // Admin
-      isPT: user?.user_details_type === 2,    // Personal Trainer
+      isAdmin: user?.user_details_type === 1,
+      isPT: user?.user_details_type === 2,
       activeWorkoutId: user ? state.activeWorkoutId ?? null : null,
       activeProgramId: user ? state.activeProgramId ?? null : null,
       user,
       loading: false
     });
 
-    // ✅ I token sono gestiti automaticamente tramite cookie HTTP-only
-    // IndexedDB non viene più usato per i token
-    // Pulizia cache al logout
     if (!user) {
-      await clearAuthTokens();
+      clearAuthTokens();
     }
   };
 
-  // ============================================
-  // Login (chiamata da LoginPage)
-  // ============================================
+  // Carica dati utente dal backend (con protezione da chiamate duplicate)
+  const loadUserData = async (): Promise<AuthUser | null> => {
+    if (isLoadingUserData.current) {
+      console.log('⏳ [AuthContext] Caricamento già in corso, skip');
+      return null;
+    }
+
+    isLoadingUserData.current = true;
+    try {
+      console.log('📡 [AuthContext] Carico dati utente dal backend...');
+      const userData = await getUserData();
+      console.log('✅ [AuthContext] Dati utente caricati:', userData);
+      return userData;
+    } catch (error) {
+      console.error('❌ [AuthContext] Errore caricamento dati utente:', error);
+      return null;
+    } finally {
+      isLoadingUserData.current = false;
+    }
+  };
+
+  // Login (chiamata da LoginPage dopo login riuscito)
   const loginUser = async (data: { user: AuthUser } | null) => {
     console.log('✅ [AuthContext] Login utente:', data?.user);
 
     if (data) {
-      // ✅ I token sono gestiti automaticamente tramite cookie HTTP-only
-      // Non salviamo più i token in IndexedDB
       setUser(data.user);
     } else {
       setUser(null);
     }
   };
 
-  // ============================================
-  // Logout (pulisce tutto)
-  // ============================================
+  // Logout
   const logoutUser = async (history?: { replace: (path: string) => void }) => {
     try {
       console.log('🔍 [AuthContext] Logout in corso...');
 
-      // Solo se online, chiama API di logout
-      if (navigator.onLine) {
-        await logout();
-      }
+      await logoutApi();
     } catch (error) {
       console.error('❌ [AuthContext] Errore durante il logout:', error);
     } finally {
-      // Reset completo stato
       updateState({
         isAuthenticated: false,
         isAdmin: false,
@@ -138,10 +144,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         loading: false
       });
 
-      // Pulisci cache Dexie
       await clearAuthTokens();
 
-      // Redirect a login
       if (history) {
         history.replace(ROUTES.PUBLIC.LOGIN);
       }
@@ -150,92 +154,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ============================================
-  // Verifica autenticazione all'avvio
-  // ============================================
+  // Verifica autenticazione
   const checkAuthentication = async (): Promise<boolean> => {
-    try {
-      updateState({ loading: true });
-
-      console.log('🔍 [AuthContext] Verifica autenticazione...');
-
-      // ✅ TODO: Supporto offline da implementare in futuro
-      // Per ora gestiamo solo autenticazione online tramite cookie
-      if (!navigator.onLine) {
-        console.log('⚠️ [AuthContext] Offline - supporto offline non ancora implementato');
-        await setUser(null);
-        return false;
-      }
-
-      // ✅ Verifica token (dai cookie HTTP-only)
-      console.log('🔍 [AuthContext] Online - verifico token...');
-
-      const isValid = await verifyToken();
-
-      if (isValid) {
-        console.log('✅ [AuthContext] Token valido, carico dati utente');
-
-        const userData = await getUserData();
-        console.log('✅ [AuthContext] Dati utente caricati:', userData);
-
-        await setUser(userData);
-        return true;
-      } else {
-        console.log('⚠️ [AuthContext] Token scaduto, provo refresh...');
-
-        const refreshResult = await verifyRefreshToken();
-
-        if (refreshResult.isValid) {
-          console.log('✅ [AuthContext] Refresh token valido, carico dati utente');
-
-          // ✅ I token sono stati aggiornati automaticamente nei cookie dal backend
-          const userData = await getUserData();
-          console.log('✅ [AuthContext] Dati utente caricati:', userData);
-
-          await setUser(userData);
-          return true;
-        }
-      }
-
-      // Token non valido
-      console.log('⚠️ [AuthContext] Nessun dato valido, logout');
-      await setUser(null);
-      return false;
-    } catch (error) {
-      console.error('❌ [AuthContext] Errore verifica autenticazione:', error);
-
-      // ✅ TODO: Gestione errori di rete con cache offline da implementare in futuro
-      await setUser(null);
-      return false;
-    } finally {
-      updateState({ loading: false });
-    }
+    return await verifyToken();
   };
 
-  // ============================================
-  // Effect: Verifica auth all'avvio
-  // ============================================
+  // Effect: Controlla sessione esistente all'avvio
   useEffect(() => {
-    checkAuthentication();
+    let mounted = true;
 
-    // ✅ Controllo periodico token (solo se online)
-    const checkInterval = setInterval(() => {
-      if (navigator.onLine) {
-        console.log('🔍 [AuthContext] Controllo periodico autenticazione');
-        checkAuthentication();
+    const checkInitialSession = async () => {
+      console.log('🔍 [AuthContext] Controllo sessione iniziale...');
+
+      try {
+        // Verifica se c'è un token valido
+        const isValid = await verifyToken();
+
+        if (!mounted) return;
+
+        if (isValid) {
+          console.log('✅ [AuthContext] Sessione valida, carico dati utente');
+          const userData = await loadUserData();
+          if (mounted) {
+            setUser(userData);
+          }
+        } else {
+          console.log('❌ [AuthContext] Nessuna sessione valida');
+          updateState({ loading: false });
+        }
+      } catch (error) {
+        console.error('❌ [AuthContext] Errore verifica sessione:', error);
+        if (mounted) {
+          updateState({ loading: false });
+        }
       }
-    }, 10 * 60 * 1000);
+    };
 
-    return () => clearInterval(checkInterval);
+    checkInitialSession();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // ============================================
   // Effect: Gestisci evento scadenza sessione
-  // ============================================
   useEffect(() => {
-    const handleSessionExpired = async () => {
+    const handleSessionExpired = () => {
       console.log('⚠️ [AuthContext] Sessione scaduta, logout forzato');
-      await setUser(null);
+      setUser(null);
     };
 
     window.addEventListener('auth:sessionExpired', handleSessionExpired);
@@ -245,35 +211,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  // ============================================
-  // Effect: Gestisci ritorno online
-  // ============================================
-  useEffect(() => {
-    const handleOnline = () => {
-      console.log('🌐 [AuthContext] Connessione ripristinata, verifico autenticazione');
-      checkAuthentication();
-    };
-
-    window.addEventListener('online', handleOnline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-    };
-  }, []);
-
-  // ============================================
   // Context value
-  // ============================================
   const value: AuthContextValue = {
-    // Stato
     ...state,
-
-    // Metodi
     login: loginUser,
     logout: logoutUser,
     checkAuth: checkAuthentication,
-
-    // ✅ Helper computed values
     id_user_details: state.user?.id_user_details || null,
     userEmail: state.user?.email || null,
     userName: state.user?.name || null,

@@ -46,16 +46,27 @@ export default async function authRoutes(fastify: FastifyInstance) {
             setSessionCookies(reply, data.session.access_token, data.session.refresh_token, data.session.expires_in);
 
             debug('[login] Login effettuato con successo per: ' + email);
-            // ✅ I token sono gestiti tramite cookie HTTP-only per sicurezza
-            // Non vengono inviati al client - solo i dati utente
-            return reply.send({
+
+            // ✅ Controlla se il client richiede i token nel body (iOS PWA standalone)
+            const requestTokens = req.headers['x-request-tokens'] === 'true';
+
+            const response: any = {
                 message: 'Login effettuato con successo',
                 user: {
                     id: data.user.id,
                     email: data.user.email,
                     ...userDetails
                 }
-            });
+            };
+
+            // ✅ Su iOS PWA i cookie non funzionano, restituisci i token nel body
+            if (requestTokens) {
+                debug('[login] iOS PWA detected - returning tokens in body');
+                response.access_token = data.session.access_token;
+                response.refresh_token = data.session.refresh_token;
+            }
+
+            return reply.send(response);
         } catch (error: any) {
             debug('[login] Errore di login: ' + error.message);
             return reply.code(500).send({ message: 'Errore durante il login' });
@@ -130,14 +141,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
         return reply.send({ message: 'Logout effettuato con successo' });
     });
 
-    fastify.post('/verify-refresh-token', async (req: FastifyRequest, reply: FastifyReply) => {
+    fastify.post<{ Body: { refresh_token?: string } }>('/verify-refresh-token', async (req: FastifyRequest<{ Body: { refresh_token?: string } }>, reply: FastifyReply) => {
         debug('[verify-refresh-token] Refresh del token');
 
-        const refreshTokenStr = req.cookies.sb_refresh_token;
+        // ✅ Prova prima dal body (iOS PWA), poi dal cookie
+        const refreshTokenStr = req.body?.refresh_token || req.cookies.sb_refresh_token;
 
-        // Note: refreshToken function from middleware might need adjustment if it expects just token string
-        // In middleware/auth.ts I defined it as taking string.
-        // But req.cookies.sb_access_token might be undefined.
         if (!refreshTokenStr) {
             return reply.code(401).send({ message: 'Token non fornito' });
         }
@@ -149,16 +158,29 @@ export default async function authRoutes(fastify: FastifyInstance) {
             return reply.code(401).send({ isValid: false, message: result.error });
         }
 
+        const newRefreshToken = result.session?.refresh_token || refreshTokenStr;
+
         // ✅ Aggiorna entrambi i cookie (access + refresh)
-        setSessionCookies(reply, result.token, result.session?.refresh_token || refreshTokenStr, result.expiresIn || 3600);
+        setSessionCookies(reply, result.token, newRefreshToken, result.expiresIn || 3600);
 
         debug('[refresh-token] Token refreshato con successo');
-        // ✅ I token sono gestiti tramite cookie HTTP-only
-        // Non vengono inviati al client - solo conferma del refresh
-        return reply.send({
+
+        // ✅ Controlla se il client richiede i token nel body (iOS PWA standalone)
+        const requestTokens = req.headers['x-request-tokens'] === 'true';
+
+        const response: any = {
             isValid: true,
             message: 'Token refreshato con successo'
-        });
+        };
+
+        // ✅ Su iOS PWA i cookie non funzionano, restituisci i token nel body
+        if (requestTokens) {
+            debug('[verify-refresh-token] iOS PWA detected - returning tokens in body');
+            response.access_token = result.token;
+            response.refresh_token = newRefreshToken;
+        }
+
+        return reply.send(response);
     });
 
     fastify.get('/verify-token', async (req: FastifyRequest, reply: FastifyReply) => {
