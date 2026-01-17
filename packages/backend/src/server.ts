@@ -81,6 +81,23 @@ fastify.setNotFoundHandler((request, reply) => {
 });
 
 const start = async () => {
+    // Registra plugin per file statici (Frontend React)
+    // Serve i file dalla cartella 'public' (che conterrà la build del frontend)
+    const publicPath = path.join(__dirname, '../public');
+
+    // Controlla se la cartella public esiste (solo in produzione o se buildata)
+    // try {
+    //     await fs.promises.access(publicPath);
+    fastify.register(import('@fastify/static'), {
+        root: publicPath,
+        prefix: '/', // Serve i file dalla root
+        wildcard: false // Disabilita wildcard per gestire SPA routing manualmente
+    });
+    debug(`[server] Static files serving from: ${publicPath}`);
+    // } catch (err) {
+    //     debug('[server] Cartella public non trovata, skipping static files serving');
+    // }
+
     const port = parseInt(process.env.PORT || '3000');
     try {
         await fastify.listen({ port, host: '0.0.0.0' });
@@ -90,5 +107,18 @@ const start = async () => {
         process.exit(1);
     }
 };
+
+// Fallback per SPA: Qualsiasi rotta non trovata (e non API) restituisce index.html
+fastify.setNotFoundHandler(async (request, reply) => {
+    // Se è una richiesta API, restituisci 404 JSON standard
+    if (request.url.startsWith('/api')) {
+        debug(`[404] API non trovata: ${request.method} ${request.url}`);
+        return reply.status(404).send({ message: 'Risorsa non trovata' });
+    }
+
+    // Altrimenti servi index.html (React Router gestirà il routing)
+    const indexHtmlPath = path.join(__dirname, '../public/index.html');
+    return reply.sendFile('index.html');
+});
 
 start();

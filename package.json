@@ -10,7 +10,7 @@
     "dev": "npm run dev --workspace mobile",
     "dev:mobile": "npm run dev --workspace mobile",
     "dev:backend": "npm run dev --workspace backend",
-    "build": "npm run build --workspace mobile",
+    "build": "npm run build --workspace mobile && npm run build:unified --workspace backend",
     "build:mobile": "npm run build --workspace mobile",
     "build:backend": "npm run build --workspace backend",
     "start:backend": "npm run start --workspace backend",

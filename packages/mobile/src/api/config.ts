@@ -13,18 +13,23 @@ declare module 'axios' {
   }
 }
 
-// In sviluppo usa l'URL locale, in produzione usa URL relativo (proxy Netlify)
-// Il proxy Netlify trasforma /api/* -> https://fit-gilli-dalpozzo-3a79c772.koyeb.app/api/*
+// In sviluppo usa localhost, in produzione usa URL relativo (Unified Hosting)
+// Con Unified Hosting, frontend e backend sono sullo stesso dominio.
 export const API_BASE_URL: string = import.meta.env.VITE_API_URL || '';
 
-console.log('🔧 [apiClient] API_BASE_URL:', API_BASE_URL || '(vuoto - usa proxy)');
+// In modalità Unified Hosting su Koyeb, API_BASE_URL sarà vuota, 
+// quindi axios userà l'URL corrente come base.
+// Le chiamate partiranno come /api/... -> https://mia-app.koyeb.app/api/...
+// che è Same-Origin.
+
+console.log('🔧 [apiClient] API_BASE_URL:', API_BASE_URL || '(vuoto - usa same-origin)');
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Importante per i cookie HTTP-only
+  withCredentials: true, // Sempre true per i cookie
 });
 
 // Interceptor per gestire refresh token automatico (401)
