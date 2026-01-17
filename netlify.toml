@@ -6,7 +6,13 @@
   command = "npm run build:mobile"
   ignore = "git diff --quiet HEAD^ HEAD packages/mobile/"
 
-# Reindirizza tutte le richieste a index.html per supportare la navigazione SPA
+# IMPORTANTE: Il proxy API deve venire PRIMA del catch-all SPA
+[[redirects]]
+  from = "/api/*"
+  to = "https://fit-gilli-dalpozzo-3a79c772.koyeb.app/api/:splat"
+  status = 200
+
+# Reindirizza tutte le altre richieste a index.html per supportare la navigazione SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -20,7 +26,7 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    
+
     # Cache per asset statici
     cache-control = '''
     max-age=31536000,
@@ -35,9 +41,3 @@
     no-cache,
     no-store,
     must-revalidate'''
-
-[[redirects]]
-  from = "/api/*"
-  to = "https://fit-gilli-dalpozzo-3a79c772.koyeb.app/api/:splat"
-  status = 200
-  force = true
