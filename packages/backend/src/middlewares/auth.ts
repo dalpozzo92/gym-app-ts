@@ -15,17 +15,15 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const isProd = process.env.NODE_ENV === 'production';
 
 export const setSessionCookies = (reply: FastifyReply, accessToken: string, refreshToken: string, expiresIn: number) => {
-    // Configurazione per iOS PWA e cross-domain:
-    // - sameSite: 'none' è obbligatorio se il dominio backend è diverso dal frontend
-    // - secure: true è obbligatorio con sameSite: 'none'
-    // - partitioned: true è sperimentale ma aiuta con CHIPS (Cookies Having Independent Partitioned State)
+    // FIX: Usiamo 'lax' perché c'è il proxy di Netlify che rende tutto "First-Party".
+    // IMPORTANTE: Forziamo 'secure: true' sempre, altrimenti su HTTPS/iOS il cookie viene scartato.
+    // Non dipendiamo da isProd per evitare bug se la variabile d'ambiente manca su Koyeb.
     const cookieOptions = {
         httpOnly: true,
-        secure: true, // Sempre true in produzione e necessario per sameSite: 'none'
-        sameSite: 'none' as const,
+        secure: true, // OBBLIGATORIO su HTTPS (Netlify/Koyeb)
+        sameSite: 'lax' as const, // 'lax' è corretto dietro proxy. 'none' insospettisce iOS ITP.
         path: '/',
-        maxAge: expiresIn,
-        // partitioned: true // Opzionale: sbloccare se ancora problemi su Chrome/nuovi Safari
+        maxAge: expiresIn
     };
 
     reply.setCookie('sb_access_token', accessToken, cookieOptions);
