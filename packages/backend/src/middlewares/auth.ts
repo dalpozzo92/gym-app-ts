@@ -15,21 +15,23 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const isProd = process.env.NODE_ENV === 'production';
 
 export const setSessionCookies = (reply: FastifyReply, accessToken: string, refreshToken: string, expiresIn: number) => {
-    // Con il proxy Netlify le richieste sono same-origin, quindi usiamo 'lax'
-    // 'none' causa problemi su iOS Safari PWA standalone
-    reply.setCookie('sb_access_token', accessToken, {
+    // Configurazione per iOS PWA e cross-domain:
+    // - sameSite: 'none' è obbligatorio se il dominio backend è diverso dal frontend
+    // - secure: true è obbligatorio con sameSite: 'none'
+    // - partitioned: true è sperimentale ma aiuta con CHIPS (Cookies Having Independent Partitioned State)
+    const cookieOptions = {
         httpOnly: true,
-        secure: isProd,
-        sameSite: 'none',
+        secure: true, // Sempre true in produzione e necessario per sameSite: 'none'
+        sameSite: 'none' as const,
         path: '/',
-        maxAge: expiresIn
-    });
+        maxAge: expiresIn,
+        // partitioned: true // Opzionale: sbloccare se ancora problemi su Chrome/nuovi Safari
+    };
+
+    reply.setCookie('sb_access_token', accessToken, cookieOptions);
 
     reply.setCookie('sb_refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: 'none',
-        path: '/',
+        ...cookieOptions,
         maxAge: 60 * 24 * 60 * 60 // 60 giorni in secondi
     });
 };
