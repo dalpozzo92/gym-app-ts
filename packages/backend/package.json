@@ -7,7 +7,7 @@
     "start": "node dist/server.js",
     "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc",
-    "build:unified": "npm run build && mkdir -p public && cp -R ../mobile/dist/. public/"
+    "build:unified": "npm run build"
   },
   "keywords": [],
   "author": "",
