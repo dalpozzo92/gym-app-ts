@@ -17,6 +17,8 @@ declare module 'axios' {
 // Il proxy Netlify trasforma /api/* -> https://fit-gilli-dalpozzo-3a79c772.koyeb.app/api/*
 export const API_BASE_URL: string = import.meta.env.VITE_API_URL || '';
 
+console.log('🔧 [apiClient] API_BASE_URL:', API_BASE_URL || '(vuoto - usa proxy)');
+
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {

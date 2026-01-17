@@ -15,10 +15,12 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const isProd = process.env.NODE_ENV === 'production';
 
 export const setSessionCookies = (reply: FastifyReply, accessToken: string, refreshToken: string, expiresIn: number) => {
+    // Con il proxy Netlify le richieste sono same-origin, quindi usiamo 'lax'
+    // 'none' causa problemi su iOS Safari PWA standalone
     reply.setCookie('sb_access_token', accessToken, {
         httpOnly: true,
-        secure: isProd, // in dev permettiamo http
-        sameSite: isProd ? 'none' : 'lax',
+        secure: isProd,
+        sameSite: 'lax',
         path: '/',
         maxAge: expiresIn
     });
@@ -26,9 +28,9 @@ export const setSessionCookies = (reply: FastifyReply, accessToken: string, refr
     reply.setCookie('sb_refresh_token', refreshToken, {
         httpOnly: true,
         secure: isProd,
-        sameSite: isProd ? 'none' : 'lax',
+        sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 24 * 60 * 60 // seconds
+        maxAge: 60 * 24 * 60 * 60 // 60 giorni in secondi
     });
 };
 
