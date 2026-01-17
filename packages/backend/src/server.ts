@@ -79,16 +79,31 @@ const start = async () => {
     // Registra plugin per file statici (Frontend React)
     const publicPath = path.join(__dirname, '../public');
 
-    // Configura fastify-static
-    // IMPORTANTE: 'wildcard: true' serve per intercettare le richieste ai file statici (es. /assets/*.js)
-    // Se il file non esiste, Fastify chiamerà il nostro setNotFoundHandler
-    fastify.register(import('@fastify/static'), {
-        root: publicPath,
-        prefix: '/',
-        wildcard: true // Abilita wildcard per servire i file statici automaticamente
-    });
+    // Check if public folder exists to prevent crash on startup
+    let publicExists = false;
+    try {
+        // Usa fs.promises o una semplice stat sincrona se siamo in startup
+        // Importiamo fs dinamicamente se non presente o usiamo try/catch su register
+        // Ma fastify-static throwa se la root non esiste.
+        await import('fs').then(fs => fs.promises.access(publicPath));
+        publicExists = true;
+    } catch (e) {
+        debug(`[server] WARNING: Public folder not found at ${publicPath}. Frontend will not be served.`);
+    }
 
-    debug(`[server] Static files serving from: ${publicPath}`);
+    if (publicExists) {
+        // Configura fastify-static
+        // IMPORTANTE: 'wildcard: true' serve per intercettare le richieste ai file statici (es. /assets/*.js)
+        // Se il file non esiste, Fastify chiamerà il nostro setNotFoundHandler
+        fastify.register(import('@fastify/static'), {
+            root: publicPath,
+            prefix: '/',
+            wildcard: true // Abilita wildcard per servire i file statici automaticamente
+        });
+        debug(`[server] Static files serving from: ${publicPath}`);
+    } else {
+        debug('[server] Skipping static files serving (folder missing)');
+    }
 
     // Fallback per SPA: Definito DOPO aver registrato routes e static
     // Questo cattura tutto ciò che non è stato gestito sopra
@@ -99,9 +114,12 @@ const start = async () => {
             return reply.status(404).send({ message: 'Risorsa non trovata' });
         }
 
-        // Altrimenti servi index.html (React Router gestirà il routing)
-        // Usa fake path per index.html
-        return reply.sendFile('index.html');
+        // Se public esiste, servi index.html
+        if (publicExists) {
+            return reply.sendFile('index.html');
+        } else {
+            return reply.status(404).send({ message: 'Frontend build not found', warning: 'Application started in API-only mode' });
+        }
     });
 
     const port = parseInt(process.env.PORT || '3000');
