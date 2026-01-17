@@ -15,13 +15,19 @@ declare module 'axios' {
 
 // In sviluppo usa localhost, in produzione usa URL relativo (Unified Hosting)
 // Con Unified Hosting, frontend e backend sono sullo stesso dominio.
-export const API_BASE_URL: string = import.meta.env.VITE_API_URL || '';
+// In sviluppo usa localhost, in produzione usa URL relativo (Unified Hosting)
+// Con Unified Hosting, frontend e backend sono sullo stesso dominio.
+// SE siamo in produzione (build di Vite), forziamo URL relativo vuoto.
+export const API_BASE_URL: string = import.meta.env.PROD
+  ? ''
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3000');
 
 // In modalità Unified Hosting su Koyeb, API_BASE_URL sarà vuota, 
 // quindi axios userà l'URL corrente come base.
 // Le chiamate partiranno come /api/... -> https://mia-app.koyeb.app/api/...
 // che è Same-Origin.
 
+console.log('🔧 [apiClient] Environment:', import.meta.env.MODE);
 console.log('🔧 [apiClient] API_BASE_URL:', API_BASE_URL || '(vuoto - usa same-origin)');
 
 export const apiClient: AxiosInstance = axios.create({
