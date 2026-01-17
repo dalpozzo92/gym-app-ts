@@ -80,12 +80,12 @@ const start = async () => {
     const publicPath = path.join(__dirname, '../public');
 
     // Configura fastify-static
-    // IMPORTANTE: Non settare 'wildcard' a false se vogliamo gestire noi il 404
-    // Usiamo decorateReply: false per evitare conflitti
+    // IMPORTANTE: 'wildcard: true' serve per intercettare le richieste ai file statici (es. /assets/*.js)
+    // Se il file non esiste, Fastify chiamerà il nostro setNotFoundHandler
     fastify.register(import('@fastify/static'), {
         root: publicPath,
         prefix: '/',
-        wildcard: false // Disabilita gestione wildcard automatica per permettere il nostro handler 404
+        wildcard: true // Abilita wildcard per servire i file statici automaticamente
     });
 
     debug(`[server] Static files serving from: ${publicPath}`);
