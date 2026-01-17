@@ -20,7 +20,7 @@ export const setSessionCookies = (reply: FastifyReply, accessToken: string, refr
     reply.setCookie('sb_access_token', accessToken, {
         httpOnly: true,
         secure: isProd,
-        sameSite: 'lax',
+        sameSite: 'none',
         path: '/',
         maxAge: expiresIn
     });
@@ -28,7 +28,7 @@ export const setSessionCookies = (reply: FastifyReply, accessToken: string, refr
     reply.setCookie('sb_refresh_token', refreshToken, {
         httpOnly: true,
         secure: isProd,
-        sameSite: 'lax',
+        sameSite: 'none',
         path: '/',
         maxAge: 60 * 24 * 60 * 60 // 60 giorni in secondi
     });
